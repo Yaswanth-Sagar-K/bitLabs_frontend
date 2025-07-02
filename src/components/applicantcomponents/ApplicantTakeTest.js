@@ -783,9 +783,10 @@ const addSnackbar = (snackbar) => {
       userId,
       async ({ file, dataUrl, filename }) => {
         try {
-          const response = await uploadImage(file);
+          // const response = await uploadImage(file);
+          // localStorage.setItem("capturedImage", file)
          
-          console.log('Uploaded to server:', response);
+          // console.log('Uploaded to server:', response);
           setCapturedImage(dataUrl);
 
           // const updatedFilename = localStorage.getItem('filename');

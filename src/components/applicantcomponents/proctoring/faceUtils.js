@@ -54,14 +54,16 @@ const loadReferenceFaceDescriptor = async () => {
     const filename = localStorage.getItem('filename');
     if (!filename) throw new Error('No filename found in localStorage');
 
-    const jwtToken = localStorage.getItem('jwtToken');
-    const response = await fetch(`http://localhost:8080/file/${filename}`,{
-      headers: { Authorization: `Bearer ${jwtToken}` },
-    });
-    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+    const dataUrl = localStorage.getItem('capturedImage');
+    if (!dataUrl) throw new Error('No captured image found in localStorage');
 
-    const blob = await response.blob();
-    const image = await faceapi.bufferToImage(blob);
+    // Create an HTMLImageElement from the base64 string
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = () => resolve(img);
+      img.onerror = (err) => reject(err);
+    });
 
     const detection = await faceapi
       .detectSingleFace(image)
@@ -80,7 +82,6 @@ const loadReferenceFaceDescriptor = async () => {
 
 // Main function to start face detection
 export const startFaceDetection = async (
- 
   setDetections,
   setAlertCount,
   videoRef,
@@ -90,59 +91,81 @@ export const startFaceDetection = async (
   interval = 1000
 ) => {
   console.log("started face detection");
+
   const referenceDescriptor = await loadReferenceFaceDescriptor();
   if (!referenceDescriptor) {
     console.warn('Reference face descriptor not available. Face comparison will not start.');
     return;
   }
 
+  // Wait until video is ready
+  const waitUntilReady = async () => {
+    const MAX_ATTEMPTS = 20;
+    let attempts = 0;
+
+    return new Promise((resolve, reject) => {
+      const checkReady = () => {
+        const video = videoRef.current;
+        if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+          console.log("Video is ready for face detection");
+          resolve();
+        } else {
+          attempts++;
+          if (attempts > MAX_ATTEMPTS) {
+            reject("Video is not ready after multiple attempts.");
+            return;
+          }
+          setTimeout(checkReady, 300); // retry every 300ms
+        }
+      };
+      checkReady();
+    });
+  };
+
+  try {
+    await waitUntilReady();
+  } catch (err) {
+    console.error(err);
+    return;
+  }
+
   let alertCounter = 0;
   const intervalId = setInterval(async () => {
     try {
-      if (
-        !videoRef.current ||
-        videoRef.current.readyState < 2
-      ) {
-        console.log("Video is not ready for face detection");
-        return;
-      }
-
-     
+      const video = videoRef.current;
       const detections = await faceapi
-        .detectAllFaces(videoRef.current, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+        .detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
         .withFaceLandmarks()
         .withFaceDescriptors();
 
-        setDetections(detections);
-        console.log(detections.length)
-      
-        const detection = detections[0];
-      const distance = faceapi.euclideanDistance(detection.descriptor, referenceDescriptor);
-      const confidence = 1 - distance;
+      setDetections(detections);
+      console.log("Detections:", detections.length);
 
-      if (confidence < 0.75 || detections.length !== 1) {
+      if (detections.length !== 1) {
         alertCounter++;
         setAlertCount(alertCounter);
-        console.warn(`Face mismatch! Confidence: ${confidence.toFixed(2)} | Alert Count: ${alertCounter}`);
+        console.warn(`Unexpected number of faces detected: ${detections.length}`);
+        alert(`Warning ${alertCounter}: Only one face should be visible!`);
+
+        if (alertCounter === 3) {
+          clearInterval(intervalId);
+          await handleViolation(userId, navigation, testName);
+        }
+        return;
+      }
+
+      const distance = faceapi.euclideanDistance(detections[0].descriptor, referenceDescriptor);
+      const confidence = 1 - distance;
+
+      if (confidence < 0.75) {
+        alertCounter++;
+        setAlertCount(alertCounter);
+        console.warn(`Face mismatch! Confidence: ${confidence.toFixed(2)}`);
         alert(`Warning ${alertCounter}: Face mismatch detected!`);
 
-        if (alertCounter === 5) {
+        if (alertCounter === 3) {
           clearInterval(intervalId);
-          console.log('Face detection stopped due to repeated mismatches.');
-          console.log(userId);
-          console.log("navigation" ,navigation);
-          console.log("test Name" ,testName);
-          if (document.fullscreenElement) {
-            try {
-              await document.exitFullscreen();
-              console.log("Exited fullscreen successfully.");
-            } catch (err) {
-              console.error("Error exiting fullscreen:", err);
-            }
-          }
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-          await submitViolation(userId, navigation, testName);
-         
+          await handleViolation(userId, navigation, testName);
         }
       }
     } catch (err) {
@@ -152,6 +175,21 @@ export const startFaceDetection = async (
 
   return intervalId;
 };
+
+const handleViolation = async (userId, navigation, testName) => {
+  if (document.fullscreenElement) {
+    try {
+      await document.exitFullscreen();
+      console.log("Exited fullscreen");
+    } catch (err) {
+      console.error("Error exiting fullscreen:", err);
+    }
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+  await submitViolation(userId, navigation, testName);
+};
+
 
 
 // Capture and validate face image
@@ -179,6 +217,7 @@ export const captureImage = async (imageSrc, videoRef, userId, onSuccess, onFail
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   const dataUrl = canvas.toDataURL('image/jpeg');
   console.log(`Canvas size: ${canvas.width}x${canvas.height}`);
+  localStorage.setItem('capturedImage', dataUrl);
 
   const detections = await faceapi
     .detectAllFaces(canvas)
