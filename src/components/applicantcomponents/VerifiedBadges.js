@@ -34,6 +34,11 @@ import djangoPNG from '../../images/Icons1/Icons/Django.svg';
 import flaskPNG from '../../images/Icons1/Icons/Flask.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Verified from '../../images/user/avatar/Verified.png';
+import UploadImageComponent from './UploadImageComponent';
+import Camera from '../../images/icons/camera.png';
+import Modal from 'react-modal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 
 
@@ -219,6 +224,9 @@ const VerifiedBadges = () => {
   const [isTimerComplete, setIsTimerComplete] = useState(false); // Track if the timer has completed
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+  const [cameraModalIsOpen, setCameraModalIsOpen] = useState(false);
+   const id = user.id;
+  
   
 
   useEffect(() => {
@@ -250,7 +258,13 @@ const VerifiedBadges = () => {
     fetchUserData();
   }, []);
 
+const handleCameraClick = () => {
+    setCameraModalIsOpen(true);
+  };
 
+   const closeCameraModal = () => {
+    setCameraModalIsOpen(false);
+  };
   useEffect(() => {
     const fetchTestData = async () => {
       try {
@@ -684,7 +698,28 @@ const VerifiedBadges = () => {
               <div className="row">
                 <div className="col-lg-12 col-md-12 ">
                   <div className="title-dashboard">
+                    <div className='none' style={{position:'fixed', top:'50%', left:'50%' }}> <Link>
+              <img
+                src={Camera}
+                alt="Upload Profile Picture"
+                onClick={handleCameraClick}
+                className="camera-icon"
+              />
+              </Link>
+              <Modal
+                isOpen={cameraModalIsOpen}
+                onRequestClose={closeCameraModal}
+                contentLabel="Upload Photo"
+                className="modal-content1"
+                overlayClassName="modal-overlay"
+              >
+                <div style={{ position: 'absolute', top: '10px', right: '20px' }}>
+                  <FontAwesomeIcon icon={faTimes} onClick={closeCameraModal} style={{ cursor: 'pointer', color: '#333' }} />
+                </div>
+                <UploadImageComponent id={id}/>
+              </Modal> </div>
                     <div className="title-dash flex2">Verified Badges</div>
+                    
                     <h3 style={{ marginTop: '50px', marginBottom: '10px' }}>Pre-Screened badge</h3>
                     {!hideSteps &&(
                     <p>
