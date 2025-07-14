@@ -224,10 +224,143 @@ const VerifiedBadges = () => {
   const [isTimerComplete, setIsTimerComplete] = useState(false); // Track if the timer has completed
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
-  const [cameraModalIsOpen, setCameraModalIsOpen] = useState(false);
    const id = user.id;
   
+    const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [photoData, setPhotoData] = useState(null);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [isAllowedToTakePhoto, setIsAllowedToTakePhoto] = useState(true);
   
+  useEffect(() => {
+  const checkLastPhotoTime = async () => {
+    try {
+      const jwtToken = localStorage.getItem('jwtToken');
+      const response = await fetch(`${apiUrl}/file/${user.id}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+
+      if (response.ok) {
+        const filenameHeader = response.headers.get('X-Filename');
+        console.log("X-Filename:", filenameHeader);
+
+        if (filenameHeader) {
+          // Match format: 12345_20250714T153030.jpg
+          const match = filenameHeader.match(/^(\d+)_(\d{8}T\d{6})\.(jpg|png)$/);
+          if (match) {
+            const timestamp = match[2]; // yyyyMMddTHHmmss
+            const year = +timestamp.slice(0, 4);
+            const month = +timestamp.slice(4, 6) - 1; // JS months 0-based
+            const day = +timestamp.slice(6, 8);
+            const hour = +timestamp.slice(9, 11);
+            const minute = +timestamp.slice(11, 13);
+            const second = +timestamp.slice(13, 15);
+
+            const photoDate = new Date(year, month, day, hour, minute, second);
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+            console.log("Captured Photo Date:", photoDate);
+            console.log("6 Months Ago:", sixMonthsAgo);
+
+            if (photoDate > sixMonthsAgo) {
+              setIsAllowedToTakePhoto(false); // disable button
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check previous photo timestamp:', err);
+    }
+  };
+
+  checkLastPhotoTime();
+}, [user.id]);
+
+
+   const startCamera = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+    // Wait for a short delay to ensure videoRef is mounted
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      } else {
+        console.error('Video element not ready');
+      }
+    }, 100); // 100ms is usually enough
+    setCameraOn(true);
+  } catch (err) {
+    console.error('Camera access denied:', err);
+  }
+};
+
+
+   const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+    setCameraOn(false);
+  };
+
+   const handleTakePhoto = () => {
+    startCamera();
+    setPhotoData(null);
+  };
+
+    const handleCapture = () => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+
+    if (canvas && video) {
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageDataUrl = canvas.toDataURL('image/png');
+      setPhotoData(imageDataUrl);
+      stopCamera();
+    }
+  };
+
+    const handleRetake = () => {
+    setPhotoData(null);
+    startCamera();
+  };
+
+  
+  const handleFinish = async () => {
+    if (!photoData) return;
+
+    setUploading(true);
+    try {
+      const blob = await (await fetch(photoData)).blob();
+      const formData = new FormData();
+      const timestamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15); 
+      formData.append('file', blob, `${user.id}_${timestamp}.jpg`);
+      const jwtToken = localStorage.getItem('jwtToken')
+
+      const response = await fetch(`${apiUrl}/file/upload/${user.id}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${jwtToken}` },
+    body: formData,
+  });
+
+      if (response.ok) {
+        console.log('Photo uploaded successfully!');
+        setPhotoData(null);
+  setCameraOn(false);
+      } else {
+         console.log('Failed to upload photo.');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+       console.log('An error occurred while uploading.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -258,13 +391,6 @@ const VerifiedBadges = () => {
     fetchUserData();
   }, []);
 
-const handleCameraClick = () => {
-    setCameraModalIsOpen(true);
-  };
-
-   const closeCameraModal = () => {
-    setCameraModalIsOpen(false);
-  };
   useEffect(() => {
     const fetchTestData = async () => {
       try {
@@ -698,26 +824,59 @@ const handleCameraClick = () => {
               <div className="row">
                 <div className="col-lg-12 col-md-12 ">
                   <div className="title-dashboard">
-                    <div className='none' style={{position:'fixed', top:'50%', left:'50%' }}> <Link>
-              <img
-                src={Camera}
-                alt="Upload Profile Picture"
-                onClick={handleCameraClick}
-                className="camera-icon"
-              />
-              </Link>
-              <Modal
-                isOpen={cameraModalIsOpen}
-                onRequestClose={closeCameraModal}
-                contentLabel="Upload Photo"
-                className="modal-content1"
-                overlayClassName="modal-overlay"
-              >
-                <div style={{ position: 'absolute', top: '10px', right: '20px' }}>
-                  <FontAwesomeIcon icon={faTimes} onClick={closeCameraModal} style={{ cursor: 'pointer', color: '#333' }} />
-                </div>
-                <UploadImageComponent id={id}/>
-              </Modal> </div>
+                    <div style={{ textAlign: 'center' }}>
+       {!cameraOn && !photoData && isAllowedToTakePhoto && (
+       <button
+  onClick={handleTakePhoto}
+  style={{
+    position: 'fixed',
+    top: '20%',
+    right: '20px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
+    zIndex: 1000,
+  }}
+>
+  <img
+    src={'../images/user/avatar/profile-pic.png'}
+    alt="Profile"
+    style={{
+      borderRadius: '50%',
+      width: '70px',
+      height: '70px',
+      objectFit: 'cover',
+      boxShadow: '0 0 8px rgba(0,0,0,0.2)'
+    }}
+  />
+</button>
+
+      )}
+
+      {cameraOn && (
+        <div>
+          <video ref={videoRef} width="400" height="300" autoPlay playsInline />
+          <br />
+          <button onClick={handleCapture}>Capture</button>
+        </div>
+      )}
+
+      <canvas ref={canvasRef} width="400" height="300" style={{ display: 'none' }} />
+
+      {photoData && (
+        <div>
+          <h3>Preview:</h3>
+          <img src={photoData} alt="Captured" style={{ border: '1px solid #ccc', marginTop: '10px' }} />
+          <br />
+          <button onClick={handleRetake} disabled={uploading}>Retake</button>
+          <button onClick={handleFinish} disabled={uploading}>
+            {uploading ? 'Uploading...' : 'Finish'}
+          </button>
+        </div>
+      )}
+    </div>
+
                     <div className="title-dash flex2">Verified Badges</div>
                     
                     <h3 style={{ marginTop: '50px', marginBottom: '10px' }}>Pre-Screened badge</h3>

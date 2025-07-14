@@ -293,7 +293,7 @@ export const uploadImage = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
  console.log(jwtToken);
-  const response = await fetch('http://localhost:8080/file/upload', {
+  const response = await fetch(`${apiUrl}/file/upload`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${jwtToken}` },
     body: formData,
