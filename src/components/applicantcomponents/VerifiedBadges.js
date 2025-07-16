@@ -34,11 +34,6 @@ import djangoPNG from '../../images/Icons1/Icons/Django.svg';
 import flaskPNG from '../../images/Icons1/Icons/Flask.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Verified from '../../images/user/avatar/Verified.png';
-import UploadImageComponent from './UploadImageComponent';
-import Camera from '../../images/icons/camera.png';
-import Modal from 'react-modal';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 
 
@@ -48,6 +43,9 @@ const SkillBadgeCard = ({ skillName, status, badgeIcon, retakeTest, testFailedAt
   const [isRetakeAvailable, setIsRetakeAvailable] = useState(false);
   const navigate = useNavigate();
   const videoRef = useRef(null);
+  const [isPhotoFetched, setIsPhotoFetched] = useState(false);
+const [photoTimestampValid, setPhotoTimestampValid] = useState(false);
+const { user } = useUserContext();
  
     // Map skill names to images
     const skillImages = {
@@ -83,6 +81,51 @@ const SkillBadgeCard = ({ skillName, status, badgeIcon, retakeTest, testFailedAt
   
     // Get the image based on skill name, default to javaPNG if not found
     const skillImage = skillImages[skillName] || javaPNG;
+
+    
+
+     useEffect(() => {
+  const checkLastPhotoTime = async () => {
+    try {
+      const jwtToken = localStorage.getItem('jwtToken');
+      const response = await fetch(`${apiUrl}/file/${user.id}/image`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+
+      if (response.ok) {
+        const filenameHeader = response.headers.get('X-Filename');
+        console.log("X-Filename:", filenameHeader);
+
+        if (filenameHeader) {
+          const match = filenameHeader.match(/^(\d+)_(\d{8}T\d{6})\.(jpg|png)$/);
+          if (match) {
+            const timestamp = match[2];
+            const year = +timestamp.slice(0, 4);
+            const month = +timestamp.slice(4, 6) - 1;
+            const day = +timestamp.slice(6, 8);
+            const hour = +timestamp.slice(9, 11);
+            const minute = +timestamp.slice(11, 13);
+            const second = +timestamp.slice(13, 15);
+
+            const photoDate = new Date(year, month, day, hour, minute, second);
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+            setPhotoTimestampValid(photoDate > sixMonthsAgo);
+          }
+        }
+
+        setIsPhotoFetched(true);
+      }
+    } catch (err) {
+      console.error('Failed to check previous photo timestamp:', err);
+      setIsPhotoFetched(false);
+    }
+  };
+
+  checkLastPhotoTime();
+}, [user.id]);
     
   useEffect(() => {
     if (status === 'FAILED') {
@@ -100,6 +143,7 @@ const SkillBadgeCard = ({ skillName, status, badgeIcon, retakeTest, testFailedAt
     
   );
 
+ 
  
       
       // Calculate the total 7 days (or 168 hours) from the failure time
@@ -134,10 +178,19 @@ const SkillBadgeCard = ({ skillName, status, badgeIcon, retakeTest, testFailedAt
     }
   }, [status]);
 
-  const handleTakeTest = (testName) => {
+ const handleTakeTest = (testName) => {
+  if (!isPhotoFetched) {
+    console.log("Image not yet checked/fetched");
+    return;
+  }
 
+  if (photoTimestampValid) {
+    console.log("Photo is recent. Navigating...");
     navigate('/applicant-take-test', { state: { testName } });
-  };
+  } else {
+    console.log("Photo too old or not found. Please take a new photo.");
+  }
+};
 
   return (
     <div className={`skill-badge-card ${status === 'PASSED' ? 'passed' : status === 'FAILED' ? 'failed' : ''}`}>
@@ -232,12 +285,14 @@ const VerifiedBadges = () => {
   const [cameraOn, setCameraOn] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isAllowedToTakePhoto, setIsAllowedToTakePhoto] = useState(true);
+  const [isPhotoFetched, setIsPhotoFetched] = useState(false);
+const [photoTimestampValid, setPhotoTimestampValid] = useState(false);
   
-  useEffect(() => {
+useEffect(() => {
   const checkLastPhotoTime = async () => {
     try {
       const jwtToken = localStorage.getItem('jwtToken');
-      const response = await fetch(`${apiUrl}/file/${user.id}`, {
+      const response = await fetch(`${apiUrl}/file/${user.id}/image`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${jwtToken}` },
       });
@@ -247,12 +302,11 @@ const VerifiedBadges = () => {
         console.log("X-Filename:", filenameHeader);
 
         if (filenameHeader) {
-          // Match format: 12345_20250714T153030.jpg
           const match = filenameHeader.match(/^(\d+)_(\d{8}T\d{6})\.(jpg|png)$/);
           if (match) {
-            const timestamp = match[2]; // yyyyMMddTHHmmss
+            const timestamp = match[2];
             const year = +timestamp.slice(0, 4);
-            const month = +timestamp.slice(4, 6) - 1; // JS months 0-based
+            const month = +timestamp.slice(4, 6) - 1;
             const day = +timestamp.slice(6, 8);
             const hour = +timestamp.slice(9, 11);
             const minute = +timestamp.slice(11, 13);
@@ -262,17 +316,15 @@ const VerifiedBadges = () => {
             const sixMonthsAgo = new Date();
             sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-            console.log("Captured Photo Date:", photoDate);
-            console.log("6 Months Ago:", sixMonthsAgo);
-
-            if (photoDate > sixMonthsAgo) {
-              setIsAllowedToTakePhoto(false); // disable button
-            }
+            setPhotoTimestampValid(photoDate > sixMonthsAgo);
           }
         }
+
+        setIsPhotoFetched(true);
       }
     } catch (err) {
       console.error('Failed to check previous photo timestamp:', err);
+      setIsPhotoFetched(false);
     }
   };
 
@@ -338,13 +390,15 @@ const VerifiedBadges = () => {
       const blob = await (await fetch(photoData)).blob();
       const formData = new FormData();
       const timestamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15); 
-      formData.append('file', blob, `${user.id}_${timestamp}.jpg`);
+      formData.append('photo', blob, `${user.id}_${timestamp}.jpg`);
       const jwtToken = localStorage.getItem('jwtToken')
 
-      const response = await fetch(`${apiUrl}/file/upload/${user.id}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${jwtToken}` },
-    body: formData,
+      const response = await fetch(`${apiUrl}/file/${user.id}/upload`, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${jwtToken}`, 
+  },
+  body: formData
   });
 
       if (response.ok) {
@@ -807,10 +861,19 @@ const VerifiedBadges = () => {
    
   };
 
-  const handleTakeTest = (testName) => {
+ const handleTakeTest = (testName) => {
+  if (!isPhotoFetched) {
+    console.log("Image not yet checked/fetched");
+    return;
+  }
 
+  if (photoTimestampValid) {
+    console.log("Photo is recent. Navigating...");
     navigate('/applicant-take-test', { state: { testName } });
-  };
+  } else {
+    console.log("Photo too old or not found. Please take a new photo.");
+  }
+};
 
   const handleRetakeTest = () => {
 
@@ -825,7 +888,7 @@ const VerifiedBadges = () => {
                 <div className="col-lg-12 col-md-12 ">
                   <div className="title-dashboard">
                     <div style={{ textAlign: 'center' }}>
-       {!cameraOn && !photoData && isAllowedToTakePhoto && (
+       {!cameraOn && !photoData && isAllowedToTakePhoto && !photoTimestampValid && (
        <button
   onClick={handleTakePhoto}
   style={{

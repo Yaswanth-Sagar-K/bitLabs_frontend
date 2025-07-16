@@ -92,7 +92,8 @@ const [shouldExitFullScreen, setShouldExitFullScreen] = useState(false);
   const fetchImage = async () => {
     try {
       const jwtToken = localStorage.getItem('jwtToken');
-      const response = await fetch(`${apiUrl}/applicant-image/getphoto/${userId}`, {
+      const response = await fetch(`${apiUrl}/file/${user.id}/image`, {
+        method: 'GET',
         headers: { Authorization: `Bearer ${jwtToken}` },
       });
 
@@ -100,24 +101,23 @@ const [shouldExitFullScreen, setShouldExitFullScreen] = useState(false);
         throw new Error('Image fetch failed');
       }
 
-      const arrayBuffer = await response.arrayBuffer(); 
+      const blob = await response.blob(); // Convert to Blob
+      const contentType = response.headers.get('content-type');
 
-      const base64Image = btoa(
-        new Uint8Array(arrayBuffer).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ''
-        )
-      );
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageSrc(reader.result); // This will be base64 data URI
+      };
+      reader.readAsDataURL(blob); // Convert blob to base64
 
-      const contentType = response.headers.get('content-type'); 
-      setImageSrc(`data:${contentType};base64,${base64Image}`);
     } catch (error) {
       console.error('Error fetching image:', error);
     }
   };
 
   fetchImage();
-}, [userId, apiUrl]);
+}, [user.id, apiUrl]);
+
 
 
 const addSnackbar = (snackbar) => {
