@@ -157,7 +157,7 @@ export const startFaceDetection = async (
       const distance = faceapi.euclideanDistance(detections[0].descriptor, referenceDescriptor);
       const confidence = 1 - distance;
 
-      if (confidence < 0.75) {
+      if (confidence < 0.65) {
         alertCounter++;
         setAlertCount(alertCounter);
         console.warn(`Face mismatch! Confidence: ${confidence.toFixed(2)}`);
@@ -267,7 +267,7 @@ export const captureImage = async (imageSrc, videoRef, userId, onSuccess, onFail
     }
     console.log(confidence);
 
-    if (confidence < 0.70) {
+    if (confidence < 0.65) {
       onFailure("Face is not matching with the profile image.");
       return;
     }
@@ -340,6 +340,9 @@ if (contentType && contentType.includes('application/json')) {
   console.log('Violation submitted:', data);
   
   localStorage.removeItem('filename');
+  if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+  document.exitFullscreen();
+}
   navigation('/applicant-verified-badges');
  
 };

@@ -34,6 +34,7 @@ import djangoPNG from '../../images/Icons1/Icons/Django.svg';
 import flaskPNG from '../../images/Icons1/Icons/Flask.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Verified from '../../images/user/avatar/Verified.png';
+import Snackbar from '../common/Snackbar';
 
 
 
@@ -46,6 +47,15 @@ const SkillBadgeCard = ({ skillName, status, badgeIcon, retakeTest, testFailedAt
   const [isPhotoFetched, setIsPhotoFetched] = useState(false);
 const [photoTimestampValid, setPhotoTimestampValid] = useState(false);
 const { user } = useUserContext();
+ const [snackbars, setSnackbars] = useState([]);
+
+   const addSnackbar = (snackbar) => {
+    setSnackbars((prevSnackbars) => [...prevSnackbars, snackbar]);
+  };
+
+   const handleCloseSnackbar = (index) => {
+    setSnackbars((prevSnackbars) => prevSnackbars.filter((_, i) => i !== index));
+  };
  
     // Map skill names to images
     const skillImages = {
@@ -147,7 +157,7 @@ const { user } = useUserContext();
  
       
       // Calculate the total 7 days (or 168 hours) from the failure time
-      const futureTime = new Date(failedDate.getTime() + 10 * 60 * 1000 + (5 * 60 * 60 * 1000) + (30 * 60 * 1000));
+      const futureTime = new Date(failedDate.getTime() + 0 * 60 * 1000 + (0 * 60 * 60 * 1000) + (0 * 60 * 1000));
 
 
 
@@ -180,6 +190,7 @@ const { user } = useUserContext();
 
  const handleTakeTest = (testName) => {
   if (!isPhotoFetched) {
+     addSnackbar({ message: 'Take confirmation image before starting the exam', type: 'error' });
     console.log("Image not yet checked/fetched");
     return;
   }
@@ -188,6 +199,7 @@ const { user } = useUserContext();
     console.log("Photo is recent. Navigating...");
     navigate('/applicant-take-test', { state: { testName } });
   } else {
+     addSnackbar({ message: 'Image is outdated please take new one', type: 'error' });
     console.log("Photo too old or not found. Please take a new photo.");
   }
 };
@@ -252,6 +264,18 @@ const { user } = useUserContext();
           </div>
         )}
       </div>
+      
+       {snackbars.map((snackbar, index) => (
+        <Snackbar
+          key={index}
+          index={index}
+          message={snackbar.message}
+          type={snackbar.type}
+          onClose={handleCloseSnackbar}
+          link={snackbar.link}
+          linkText={snackbar.linkText}
+        />
+      ))}
     </div>
   );
 };
@@ -287,6 +311,15 @@ const VerifiedBadges = () => {
   const [isAllowedToTakePhoto, setIsAllowedToTakePhoto] = useState(true);
   const [isPhotoFetched, setIsPhotoFetched] = useState(false);
 const [photoTimestampValid, setPhotoTimestampValid] = useState(false);
+ const [snackbars, setSnackbars] = useState([]);
+
+   const addSnackbar = (snackbar) => {
+    setSnackbars((prevSnackbars) => [...prevSnackbars, snackbar]);
+  };
+
+   const handleCloseSnackbar = (index) => {
+    setSnackbars((prevSnackbars) => prevSnackbars.filter((_, i) => i !== index));
+  };
   
 useEffect(() => {
   const checkLastPhotoTime = async () => {
@@ -863,6 +896,7 @@ useEffect(() => {
 
  const handleTakeTest = (testName) => {
   if (!isPhotoFetched) {
+     addSnackbar({ message: 'Take confirmation image before starting the exam', type: 'error' });
     console.log("Image not yet checked/fetched");
     return;
   }
@@ -871,6 +905,7 @@ useEffect(() => {
     console.log("Photo is recent. Navigating...");
     navigate('/applicant-take-test', { state: { testName } });
   } else {
+     addSnackbar({ message: 'Image is outdated please take new one', type: 'error' });
     console.log("Photo too old or not found. Please take a new photo.");
   }
 };
@@ -902,17 +937,7 @@ useEffect(() => {
     zIndex: 1000,
   }}
 >
-  <img
-    src={'../images/user/avatar/profile-pic.png'}
-    alt="Profile"
-    style={{
-      borderRadius: '50%',
-      width: '70px',
-      height: '70px',
-      objectFit: 'cover',
-      boxShadow: '0 0 8px rgba(0,0,0,0.2)'
-    }}
-  />
+ <i class="fas fa-user fa-3x"></i>
 </button>
 
       )}
@@ -1217,9 +1242,20 @@ useEffect(() => {
 
 
 
-      
+       {snackbars.map((snackbar, index) => (
+        <Snackbar
+          key={index}
+          index={index}
+          message={snackbar.message}
+          type={snackbar.type}
+          onClose={handleCloseSnackbar}
+          link={snackbar.link}
+          linkText={snackbar.linkText}
+        />
+      ))}
 
     </div>
+    
   );
 };
 
