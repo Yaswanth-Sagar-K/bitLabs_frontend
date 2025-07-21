@@ -72,6 +72,7 @@ const [snackbar, setSnackbar] = useState({ open: false, message: '', type: '' })
   };
   const handleSendOTP = async () => {
     try {
+       setIsEmailFieldDisabled(true);
       const response = await axios.post(`${apiUrl}/applicant/forgotpasswordsendotp`, { email });
       setOTPTimerResend(60);
       const timerInterval = setInterval(() => {
@@ -95,6 +96,7 @@ const [snackbar, setSnackbar] = useState({ open: false, message: '', type: '' })
       setOtpSent(false);
       setOtpVerified(false);
       setResetError('Enter valid email address');
+      setIsEmailFieldDisabled(false);
     }
   };
   const handleVerifyOTP = async () => {
@@ -207,6 +209,7 @@ const [snackbar, setSnackbar] = useState({ open: false, message: '', type: '' })
   onChange={handleEmailChange}
   onBlur={handleEmailBlur}
   className="input-style"
+   disabled={isEmailFieldDisabled}
 />
 
     </div>

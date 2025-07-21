@@ -78,6 +78,7 @@ function LoginBody({ handleLogin }) {
           loginEndpoint,
           {
             email: email1,
+            utmSource: utmSource,
           },
           {
             headers: {
@@ -117,15 +118,15 @@ function LoginBody({ handleLogin }) {
               {
                 Last_Name: name1,
                 Email: email1,
-                Lead_Status: "signedup",
+                // Lead_Status: "signedup",
                 Status_TS: "Signed-Up",
-                Lead_Source: utmSource || "Direct", // Set a default if empty
+                // Lead_Source: utmSource || "Direct", // Set a default if empty
                 Industry: "Software",
-                Utm_Source_TS: utmSource || "Unknown",
-                Utm_Medium_TS: utmMedium || "Unknown",
-                Utm_Campaign_TS: utmCampaign || "Unknown",
-                Utm_Content_TS: utmContent || "Unknown",
-                Utm_Term_TS: utmTerm || "Unknown",
+                Utm_Source_TS: utmSource || "",
+                Utm_Medium_TS: utmMedium || "",
+                Utm_Campaign_TS: utmCampaign || "",
+                Utm_Content_TS: utmContent || "",
+                Utm_Term_TS: utmTerm || "",
               },
             ],
           };
@@ -195,8 +196,17 @@ function LoginBody({ handleLogin }) {
 
           let resume;
           try {
+            const jwtToken = localStorage.getItem("jwtToken");
             const profileIdResponse1 = await axios.get(
-              `${apiUrl}/resume/pdf/${userId}`
+
+            `${apiUrl}/applicant-pdf/getresume/${userId}`,
+
+               {
+              headers: {
+                Authorization: `Bearer ${jwtToken}`,
+              },
+            },
+
             );
           } catch (error) {
             resume = error.response.status;
@@ -335,8 +345,15 @@ function LoginBody({ handleLogin }) {
         const profileId = profileIdResponse.data;
         let resume;
         try {
-          const profileIdResponse1 = await axios.get(
-            `${apiUrl}/resume/pdf/${userId}`
+              const jwtToken = localStorage.getItem("jwtToken")
+              const profileIdResponse1 = await axios.get(
+            `${apiUrl}/resume/pdf/${userId}`,
+               {
+              headers: {
+                Authorization: `Bearer ${jwtToken}`,
+              },
+            }
+ 
           );
         } catch (error) {
           resume = error.response.status;
@@ -551,7 +568,7 @@ function LoginBody({ handleLogin }) {
     try {
       setCandidateRegistrationInProgress(true);
       const modifiedUtmSource = utmSource.includes("bitlabs.in/jobs")
-        ? "first time"
+        ? "Web login"
         : utmSource;
       const response = await axios.post(`${apiUrl}/applicant/saveApplicant`, {
         name: candidateName,
@@ -615,7 +632,7 @@ function LoginBody({ handleLogin }) {
             Email: candidateEmail1,
             Phone: candidateMobileNumber,
             Status_TS: "Signed-Up",
-            Lead_Source: utmSource || "Direct", // Set a default if empty
+            // Lead_Source: utmSource || "Direct", // Set a default if empty
             Industry: "Software",
             Mobile: candidateMobileNumber,
             Utm_Source_TS: utmSource || "Unknown",
@@ -676,14 +693,13 @@ function LoginBody({ handleLogin }) {
     if (!email.trim()) {
       return "Email is required.";
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) ? "" : "Please enter a valid email address.";
-  };
-  const isEmailValid1 = (email) => {
-    if (!email.trim()) {
-      return "Email is required.";
+ 
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|in|org)$/i;
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address.";
     }
-    const excludedDomains = [
+ 
+    const allowedDomains = [
       "gmail.com",
       "yahoo.com",
       "outlook.com",
@@ -695,10 +711,13 @@ function LoginBody({ handleLogin }) {
       "protonmail.com",
       "tutanota.com",
     ];
-    const domain = email.split("@")[1];
-    if (excludedDomains.includes(domain)) {
-      return "Please enter your official email ID.";
+ 
+    const domain = email.trim().toLowerCase().split("@")[1];
+ 
+    if (!allowedDomains.includes(domain)) {
+      return "Please enter a valid email address";
     }
+ 
     return "";
   };
   const isPasswordValid = (password) => {

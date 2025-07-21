@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
@@ -22,8 +21,8 @@ import CookiePolicy from './components/common/CookiePolicy';
 import TermsOfServices from './components/common/TermsOfServices';
 import ApplicantBasicDetails from './components/applicantcomponents/ApplicantBasicDetails';
 import JobWidget from './components/jobWidget';
-import ApplicantTakeTestGuard from './components/applicantcomponents/proctoring/ApplicantTakeTestGuard'
-import CodeEditor from './components/applicantcomponents/CodeEditor';
+import ChatBotWidget from './ChatBotWidget';
+
 
 
 function App() {
@@ -55,7 +54,7 @@ function App() {
           <p>Loading...</p>
         ) : (
           <Router>
-            <ApplicantTakeTestGuard />
+            
             <Routes>
               <Route path="/" element={<IndexPage />} />
               <Route path="/find-jobs" element={<IndexPage />} />
@@ -72,7 +71,6 @@ function App() {
               <Route path="/privacypolicy" element={<PrivacyPolicy />} />
               <Route path="/cookiepolicy" element={<CookiePolicy />} />
               <Route path="/termsofservices" element={<TermsOfServices />} />
-              
   <Route path="/widget" element={<JobWidget />} />
               {isLoggedIn ? (
                 <>
@@ -91,7 +89,6 @@ function App() {
                 <Route path="/applicant-job-alerts" element={<ApplicantHomePage />} />
                 <Route path="/applicant-take-test" element={<ApplicantHomePage />} />
                 <Route path="/applicant-resume" element={<ApplicantHomePage />} />
-                <Route path="/applicant-daily-test" element={<ApplicantHomePage />} />
                 {/* <Route path="/verified-badges" component={VerifiedBadges} /> */}
                 <Route path="/applicant-verified-badges" element={<ApplicantHomePage />} />
                 <Route path="/applicant-resume-builder" element={<ApplicantHomePage />} />
@@ -115,7 +112,6 @@ function App() {
                 <Route path="/recruiter-repost-job/:id" element={<RecruiterHomePage />} />
                 <Route path="/recruiter-view-organization" element={<RecruiterHomePage />} />
                 <Route path="/recruiter-edit-organization" element={<RecruiterHomePage />} />
-                <Route path="/solve-questions" element={<CodeEditor />} />
               
                 </>
               ) : (
@@ -126,6 +122,7 @@ function App() {
           </Router>
         )}
       </UserProvider>
+      <ChatBotWidget />
     </div>
   );
 }

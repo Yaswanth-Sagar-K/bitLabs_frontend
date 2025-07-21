@@ -35,8 +35,8 @@ const ResumeEditPopup = ({ id, resumeFileName }) => {
         setError('Only PDF files are allowed.');
         setResumeFile(null);
         setFileName(''); 
-      } else if (file.size > 1048576) { 
-        setError('File size should be less than 1MB.');
+      } else if (file.size > 5*1024*1024) { 
+        setError('File size should be less than 5MB.');
         setResumeFile(null);
         setFileName(''); 
       } else {
@@ -60,7 +60,7 @@ const ResumeEditPopup = ({ id, resumeFileName }) => {
       const formData = new FormData();
       formData.append('resume', resumeFile);
       const response = await axios.post(
-        `${apiUrl}/resume/upload/${user.id}`,
+        `${apiUrl}/applicant-pdf/${user.id}/upload`,
         formData,
         {
           headers: {
@@ -89,7 +89,8 @@ const ResumeEditPopup = ({ id, resumeFileName }) => {
  
  
   return (
-    <div id="upload-resume-editprofile">
+    <div id="upload-resume-editprofile"
+    style={{marginBottom: "20px"}}>
       <div className="popup-heading-editprofile1">Resume</div>
       <div className="file-upload">
         <input
@@ -103,30 +104,73 @@ const ResumeEditPopup = ({ id, resumeFileName }) => {
         />
                
       </div>
-      <div className="row-editprofile">
-        <i className="file-icon"></i>
-        <input
-          type="text"
-          value={fileName} 
-          onChange={handleInputChange}
-          className="file-name-input-resume"
-          placeholder="No file selected"
-        />
-        <button
-          type="button"
-          onClick={triggerFileInputClick}
-          className="browse-btn-resume"
-        >
-          Browse
-        </button>
-        <span className="separator">Or</span>
-        <button
-          type="button"
-          onClick={openModal}
-          className="build-btn-resume"
-        >
-          Build Your Resume
-        </button>
+      <div className="row row-editprofile">
+ 
+  <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+  <i
+      style={{
+        position: 'absolute',
+        left: '30px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        zIndex: 1,
+      }}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
+<path d="M13.75 2H6.75C6.21957 2 5.71086 2.21071 5.33579 2.58579C4.96071 2.96086 4.75 3.46957 4.75 4V20C4.75 20.5304 4.96071 21.0391 5.33579 21.4142C5.71086 21.7893 6.21957 22 6.75 22H18.75C19.2804 22 19.7891 21.7893 20.1642 21.4142C20.5393 21.0391 20.75 20.5304 20.75 20V9L13.75 2Z" stroke="#9E9E9E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.75 2V9H20.75" stroke="#9E9E9E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+    </i>
+ 
+ 
+    <input
+      type="text"
+      value={fileName}
+      readOnly
+ 
+      onChange={handleInputChange}
+      style={{
+        paddingRight: '80px', // Adjust based on the button width
+        width: '100%',
+        padding: '10px',
+        paddingLeft: '50px', // Adjust based on the icon width
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+        color: "#0E8CFF", // assuming var(--link, #0E8CFF)
+        boxSizing: "border-box",
+        borderRadius: "8px",
+        border: "1px solid #E5E5E5",
+        background: "#F5F5F5",
+        textAlign: "left",
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontSize: "15px",
+        fontStyle: "normal",
+        fontWeight: 500,
+        lineHeight: "15px",
+      }}
+      placeholder="No file selected"
+    />
+    <button
+      type="button"
+      onClick={triggerFileInputClick}
+      className="browse-btn-resume  "
+ 
+      style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        padding: '5px 10px',
+        color: 'white',
+        border: 'none',
+        cursor: 'pointer',
+        borderRadius: '4px'
+      }}
+    >
+      Browse
+    </button>
+  </div>
+
       </div>
       <ModalWrapper isOpen={isModalOpen} onClose={closeModal} title="Build Your Resume">
         <ResumeBuilder />

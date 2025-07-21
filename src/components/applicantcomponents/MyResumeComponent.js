@@ -1,5 +1,4 @@
 import React, { useState,useEffect } from 'react';
-import BannerImage from '../../images/blog/dashboard/Banner_Image.png';
 import './MyResume.css';
 import ResumeBuilder from './ResumeBuilder';
 import ModalWrapper from './ModalWrapper';
@@ -150,23 +149,7 @@ const MyResumeComponent = ({ pdfUrl, loading }) => {
 
   return (
     <div style={styles.commonContainer}>
-      <section style={styles.banner}>
-        <div style={styles.bannerContent}>
-          <h1 style={styles.bannerHeading}>Build your professional resume for free</h1>
-          <p>
-            Land your dream job faster. Build a standout resume that captivates employers and
-            <br />
-            propels you towards unparalleled opportunities.
-          </p>
-          <button style={styles.createNewButton} onClick={handleCreateNowClick}>
-            Create Now
-          </button>
-        </div>
-        <div style={styles.bannerImage}>
-          <img src={BannerImage} alt="Banner" style={styles.bannerImageImg} className="banner1"/>
-        </div>
-      </section>
-
+      
       <section className="flat-dashboard-password" style={{borderRadius:'23px 23px 1px 2px', marginBottom: 0}}>
       <div className="themes-container">
               <div className="row">

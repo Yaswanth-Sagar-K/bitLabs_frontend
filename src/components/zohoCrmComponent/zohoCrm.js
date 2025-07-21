@@ -77,33 +77,35 @@ function ZohoCRMService() {
       console.error("Invalid lead data structure");
       return null;
     }
-
+ 
     try {
       const email = leadData.data[0].Email;
-      
+     
       const zohoUserId = await retryOperation(
         async () => await searchLead(email),
         retryOptions.maxRetries,
         retryOptions.delay
       );
-
+ 
       if (zohoUserId) {
         console.log("Lead already exists with ID:", zohoUserId);
         return zohoUserId;
       } else {
         console.log("Creating new lead...");
-        
-        return await retryOperation(
+        const id  = await retryOperation(
           async () => await createLead(leadData),
           retryOptions.maxRetries,
           retryOptions.delay
         );
+ 
+        return id ;
       }
     } catch (error) {
       console.error("Error handling lead after all retry attempts:", error.message);
       return null;
     }
   };
+ 
 
   return {
     createLead,

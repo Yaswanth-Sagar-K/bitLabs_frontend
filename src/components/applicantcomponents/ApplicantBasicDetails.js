@@ -21,6 +21,9 @@ const ApplicantBasicDetails = () => {
   let { number } = useParams();
   
   number = parseInt(number, 10);
+  const [isExperienceMenuOpen, setIsExperienceMenuOpen] = useState(false);
+  const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
+  const [isSkillsMenuOpen, setIsSkillsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentStage, setCurrentStage] = useState(number);
   const [snackbars, setSnackbars] = useState([]);
@@ -31,6 +34,7 @@ const ApplicantBasicDetails = () => {
   const [shouldBeHidden, setShouldBeHidden] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [resumeUploaded, setResumeUploaded] = useState(false);
   const [applicant, setApplicant] = useState({
     firstName: '',
     lastName: '',
@@ -104,6 +108,7 @@ const handleInputChange = (e) => {
 const handleBlur = (e) => {
   const { name, value } = e.target;
   validateInput(name, value);
+  
  
   
 };
@@ -141,7 +146,7 @@ const handlePreferredJobLocationsChange = (selected) => {
   const [loginUrl, setLoginUrl] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const steps = ['Personal Information', 'Professional Details', 'Upload Resume'];
-  const yearsOptions = Array.from({ length: 16 }, (_, i) => ({ label: `${i} ` }));
+  const yearsOptions = Array.from({ length: 16 }, (_, i) => ({ label: `${i}` }));
 
   const qualificationsOptions = ['B.Tech', 'MCA', 'Degree', 'Intermediate', 'Diploma'];
   const skillsOptions = ['Java', 'C', 'C++', 'C Sharp', 'Python', 'HTML', 'CSS', 'JavaScript', 'TypeScript', 'Angular', 'React', 'Vue', 'JSP', 'Servlets', 'Spring', 'Spring Boot', 'Hibernate', '.Net', 'Django', 'Flask', 'SQL', 'MySQL', 'SQL-Server', 'Mongo DB', 'Selenium', 'Regression Testing', 'Manual Testing'];
@@ -151,7 +156,23 @@ const handlePreferredJobLocationsChange = (selected) => {
     setLoading(false);
   }, []);
   
-  
+   useEffect(() => {
+    const setFavicon = (url) => {
+      let link = document.querySelector("link[rel*='icon']");
+
+      // if (!link) {
+      //   link = document.createElement('link');
+      //   link.rel = 'icon';
+      //   document.head.appendChild(link);
+      // }
+
+      link.type = 'image/png';
+      link.href = url;
+    };
+    console.log("image inserted ")
+    setFavicon('/images/favicon.png'); // Path to your favicon
+  }, []);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -280,7 +301,7 @@ async function updateZohoCRM() {
         First_Name: basicDetails.firstName,
         Email: basicDetails.email,
         Phone: basicDetails.alternatePhoneNumber,
-        Lead_Status: "completed profile",
+        // Lead_Status: "completed profile",
         Status_TS: "Completed Profile",
         Industry: "Software",
         Technical_Skills: applicantProfileDTO.skillsRequired
@@ -372,14 +393,15 @@ delete transformedApplicantProfileDTO.skillsRequired;
   const handleResumeSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const fileSizeLimit = 1 * 1024 * 1024; 
+      const fileSizeLimit = 5 * 1024 * 1024; 
       const allowedTypes = ['application/pdf'];
   
       if (file.size > fileSizeLimit) {
         
-        addSnackbar({ message: 'File size should be less than 1MB and Only PDF allowed.', type: 'error' });
-        setErrorMessage('File size should be less than 1MB and Only PDF allowed.');
+        addSnackbar({ message: 'File size should be less than 5MB and Only PDF allowed.', type: 'error' });
+        setErrorMessage('File size should be less than 5MB and Only PDF allowed.');
         setSelectedFile(null);
+        setResumeUploaded(false);
         return;
       }
   
@@ -388,12 +410,14 @@ delete transformedApplicantProfileDTO.skillsRequired;
         addSnackbar({ message: 'Only PDF file types are allowed.', type: 'error' });
         setErrorMessage('Only PDF file types are allowed.');
         setSelectedFile(null);
+        setResumeUploaded(false);
         return;
       }
   
       setErrorMessage('');
       setResumeFile(file);
       setSelectedFile(file);
+      setResumeUploaded(true);
     }
   };
   
@@ -452,7 +476,7 @@ delete transformedApplicantProfileDTO.skillsRequired;
       const formData = new FormData();
       formData.append('resume', resumeFile);
       const response = await axios.post(
-        `${apiUrl}/resume/upload/${user.id}`,
+        `${apiUrl}/applicant-pdf/${user.id}/upload`,
         formData,
         {
           headers: {
@@ -576,7 +600,8 @@ delete transformedApplicantProfileDTO.skillsRequired;
       const formData = new FormData();
       formData.append('resume', resumeFile);
       const response = await axios.post(
-        `${apiUrl}/resume/upload/${user.id}`,
+        `${apiUrl}/applicant-pdf/${user.id}/upload`,
+
         formData,
         {
           headers: {
@@ -731,6 +756,9 @@ delete transformedApplicantProfileDTO.skillsRequired;
           onChange={handleQualificationChange}
           selected={qualification ? [qualification] : []}
           className="input-form typeahead"
+          inputProps={{ readOnly: true }}  
+        onInputChange={() => {}}        
+        filterBy={() => true}  
         />
         {errors.qualification && <div className="error-message">{errors.qualification}</div>}
       </div>
@@ -743,6 +771,9 @@ delete transformedApplicantProfileDTO.skillsRequired;
           onChange={handleSpecializationChange}
           selected={specialization ? [specialization] : []}
           className="input-form typeahead"
+          inputProps={{ readOnly: true }}  
+        onInputChange={() => {}}        
+        filterBy={() => true}  
         />
         {errors.specialization && <div className="error-message">{errors.specialization}</div>}
       </div>
@@ -766,10 +797,78 @@ delete transformedApplicantProfileDTO.skillsRequired;
         id="experience"
         options={yearsOptions}
         placeholder="*Experience in Years"
-        onChange={(selected) => setExperience(selected[0] ? selected[0].label : '')}
-        selected={yearsOptions.filter(option => option.label === experience)}
+         open={isExperienceMenuOpen}
+                onFocus={() => {
+                  setIsExperienceMenuOpen(true);
+                  setIsLocationMenuOpen?.(false);
+                }}
+                onBlur={() => {
+                  setTimeout(() => setIsExperienceMenuOpen(false), 150); // allow selection to register
+                }}
+                onInputChange={() => { }}
+                inputProps={{ readOnly: true, style: { cursor: 'pointer' } }}
+                filterBy={() => true}
+                highlightOnlyResult={false}
+                renderMenuItemChildren={(option) => (
+                  <div
+                    style={{
+                      padding: '8px 12px',
+                      fontWeight: option.label === experience ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {option.label}
+                  </div>
+                )}
+                renderMenu={(results, menuProps) => (
+                  <ul
+                    {...menuProps}
+                    style={{
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      margin: 0,
+                      padding: 0,
+                      listStyle: 'none',
+                      border: '1px solid #ccc',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      zIndex: 1000,
+                      width: '100%',
+                    }}
+                  >
+                    {results.map((option, index) => (
+                      <li
+                        key={index}
+                        onClick={() => {
+                          setExperience(option.label);
+                          setIsExperienceMenuOpen(false);
+                          // Optional blur
+                          setTimeout(() => {
+                            const inputEl = document.querySelector('#experience input');
+                            if (inputEl) inputEl.blur();
+                          }, 0);
+                        }}
+                        style={{
+                          padding: '3px 7px',
+                          fontSize: '16px',
+                          fontWeight: option.label === experience ? 'bold' : 'normal',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {option.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
         className="input-form typeahead"
-        single
+        single  
+             
+        selected={experience ? [experience] : []}
+ 
       />
       {!experience && errors.experience && (
         <div className="error-message">{errors.experience}</div>
@@ -780,11 +879,85 @@ delete transformedApplicantProfileDTO.skillsRequired;
         <Typeahead
           id="preferredJobLocations"
           multiple
-          options={cities}
+          options={cities.filter(city => !preferredJobLocations.includes(city))}
           placeholder="*Preferred Job Locations"
-          onChange={handlePreferredJobLocationsChange}
-          selected={preferredJobLocations}
-          className="input-form typeahead"
+           onChange={(selected) => {
+                  handlePreferredJobLocationsChange(selected);
+                  if (selected.length < preferredJobLocations.length) {
+                    setTimeout(() => setIsLocationMenuOpen(true), 160); // Delay to override blur
+                  } else {
+                    setIsLocationMenuOpen(false);
+                  }
+                }}
+                selected={preferredJobLocations}
+                className="input-form typeahead"
+                inputProps={{}}
+                onInputChange={() => {
+                  setIsLocationMenuOpen(true); // Keep dropdown open on typing
+                }}
+                filterBy={(option) => !preferredJobLocations.includes(option)}
+                labelKey={(option) => option}
+                open={isLocationMenuOpen}
+                onFocus={() => {
+                  setIsLocationMenuOpen(true);
+                  setIsExperienceMenuOpen && setIsExperienceMenuOpen(false);
+                }}
+                onBlur={() => {
+                  setTimeout(() => setIsLocationMenuOpen(false), 150); // Allow time for item click
+                }}
+                renderMenu={(results, menuProps) => (
+                  <ul
+                    {...menuProps}
+                    style={{
+                      maxHeight: '190px',
+                      overflowY: 'auto',
+                      margin: 0,
+                      padding: 0,
+                      listStyle: 'none',
+                      border: '1px solid #ccc',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      zIndex: 1000,
+                      width: '100%',
+                    }}
+                  >
+                    {results.length === 0 ? (
+                      <li
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: '16px',
+                          color: '#999',
+                          textAlign: 'center',
+                        }}
+                      >
+                        No matches found
+                      </li>
+                    ) : (
+                      results.map((option, index) => (
+                        <li
+                          key={index}
+                          onClick={() => {
+                            const updated = [...preferredJobLocations, option];
+                            handlePreferredJobLocationsChange(updated);
+                            setIsLocationMenuOpen(false);
+                          }}
+                          style={{
+                            padding: '1px 10px',
+                            fontSize: '16px',
+                            fontWeight: preferredJobLocations.includes(option) ? 'bold' : 'normal',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {option}
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
         />
         {errors.preferredJobLocations && <div className="error-message">{errors.preferredJobLocations}</div>}
       </div>
@@ -827,6 +1000,11 @@ delete transformedApplicantProfileDTO.skillsRequired;
           marginRight: '20px',
           boxSizing: 'border-box',
           cursor: 'pointer',
+          position: 'relative',
+          width: '60%',
+          color: '#333',
+          background: 'transparent',
+          backgroundColor: '#F5F5F5',
         }}
       > 
       <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
@@ -845,17 +1023,35 @@ delete transformedApplicantProfileDTO.skillsRequired;
             height: '100%',
             border: 'none',
             background: 'transparent',
-            paddingLeft: '40px',
-            boxSizing: 'border-box',
-            cursor: 'pointer',
+            height: '40px', // adjust as needed
+ 
+      paddingLeft: '20px',
+      paddingRight: '100px', // make room for button
+      boxSizing: 'border-box',
+      cursor: 'pointer',
+      backgroundColor: '#F5F5F5',
+      color: '#333',
+      fontSize: '15px',
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
           }}
         />
-      </div>
       <button
         type="button"
-        onClick={triggerFileInputClick}
-        className="btn-3"
+
+        onClick={(e) => {
+
+          e.stopPropagation();
+        
+          triggerFileInputClick();
+        
+        }}
+        
         style={{
+        
+          position: 'absolute',     
+          top: '50%',   
+          right: '10px',
+          transform: 'translateY(-50%)',
           backgroundColor: '#7E7E7E',
           color: 'white',
           padding: '10px 15px',
@@ -867,6 +1063,7 @@ delete transformedApplicantProfileDTO.skillsRequired;
       >
         Browse
       </button>
+      </div>
 
     </div>
  {errorMessage && (
@@ -876,31 +1073,12 @@ delete transformedApplicantProfileDTO.skillsRequired;
   )}
               </div>
               <br></br>
-              <p style={{ marginRight: '5px' }}><strong>Or</strong></p>
               <br></br>
               <ModalWrapper1 isOpen={isModalOpen} onClose={closeModal} title="Build Your Resume">
         <ResumeBuilder />
       </ModalWrapper1>
       {error && <div className="error-message">{error}</div>}
-              <div id="item_2" className="col-lg-6 col-md-12" style={{ display: 'flex', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={openModal}
-                  className="btn-3"
-                  style={{
-                    backgroundColor: '#7E7E7E',
-                    color: 'white',
-                    padding: '10px 15px',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    marginTop: '5px',
-                    textTransform:'none',
-                  }}
-                >
-                  Build Your Resume
-                </button>
-              </div>
+              
 
               
               <ModalComponent
@@ -980,8 +1158,18 @@ delete transformedApplicantProfileDTO.skillsRequired;
               <button type="button" onClick={handleNext} className="form-button" >Next</button>
             )}
             {currentStage === 3 && (
-              <button type="submit" className="form-button">Submit</button>
-            )}
+  <button
+    type="submit"
+    className="form-button"
+    disabled={!resumeUploaded}
+    style={{
+      opacity: resumeUploaded ? 1 : 0.6,
+      cursor: resumeUploaded ? 'pointer' : 'not-allowed',
+    }}
+  >
+    Submit
+  </button>
+)}
           </div>
         </form>
       </div>

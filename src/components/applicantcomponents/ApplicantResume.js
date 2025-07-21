@@ -37,7 +37,7 @@ const ApplicantResume = () => {
   const fetchResumeContent = async () => {
     try {
       const jwtToken = localStorage.getItem('jwtToken');
-      const response = await fetch(`${apiUrl}/resume/pdf/${user.id}`, {
+      const response = await fetch(`${apiUrl}/applicant-pdf/getresume/${user.id}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
@@ -62,7 +62,7 @@ const ApplicantResume = () => {
         <div className="row">
           <div className="col-lg-12 col-md-12">
             <div className="title-dashboard">
-              <div className="title-dash">Resume</div>
+              <div className="title-dash">My Resume</div>
             </div>
           </div>
         </div>

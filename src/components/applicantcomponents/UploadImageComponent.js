@@ -10,24 +10,27 @@ const UploadImageComponent = ({ id}) => {
   const [photoFile, setPhotoFile] = useState(null);
   const [error, setError] = useState('');
   const [snackbars, setSnackbars] = useState([]);  
-
+ const [fileName, setFileName] = useState('');
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
-    const fileExtension = file.name.split('.').pop().toLowerCase();
+  const fileExtension = file.name.split('.').pop().toLowerCase();
 
-    if (fileExtension === 'jpeg' || fileExtension === 'jpg' || fileExtension === 'png') {
-      if (file.size < 1048576) { 
-        setPhotoFile(file);
-        setError('');
-      } else {
-        setError('File size must be less than 1 MB.');
-        setPhotoFile(null);
-      }
+  if (fileExtension === 'jpeg' || fileExtension === 'jpg' || fileExtension === 'png') {
+    if (file.size < 5 * 1024 * 1024) {
+      setPhotoFile(file);
+      setFileName(file.name); // <-- Add this
+      setError('');
     } else {
-      setError('Only JPEG and PNG files are allowed.');
+      setError('File size must be less than 5 MB.');
       setPhotoFile(null);
+      setFileName('');
     }
-  };
+ } else {
+    setError('Only JPEG and PNG files are allowed.');
+    setPhotoFile(null);
+    setFileName('');
+  }
+};
 
   const addSnackbar = (snackbar) => {
     setSnackbars((prevSnackbars) => [...prevSnackbars, snackbar]);
@@ -66,54 +69,128 @@ const UploadImageComponent = ({ id}) => {
   };
 
   return (
-    <div id="upload-profile">
-      <div className='popup-heading'>Upload your profile picture:JPG or PNG
-      
-      </div>
-    
-      <input
-        className="up-file-edit"
-        id="tf-upload-img"
-        type="file"
-        name="profile"
-        accept="image/jpeg, image/png" 
-        required=""
-        onChange={handleFileSelect}
-      />
-      <button
-        type="button"
-        onClick={uploadPhoto}
-        className="btn-3"
-        style={{
-          backgroundColor: '#F97316',
-          color: 'white',
-          padding: '10px 15px',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          marginLeft:'auto',
-          marginRight:'0',
-          marginTop: '15px',
+ <div id="upload-profile" style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
+  <div style={{ marginBottom: '10px', fontSize: '16px', fontWeight: '600', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+    Upload your profile picture: <span style={{ fontWeight: '400' }}>JPG or PNG</span>
+  </div>
 
-          textTransform:'capitalize',
-          
-        }}
-      >
-        Upload Photo
-      </button>
-      {error && <div className="error-message">{error}</div>}
-      {snackbars.map((snackbar, index) => (
-        <Snackbar
-          key={index}
-          index={index}
-          message={snackbar.message}
-          type={snackbar.type}
-          onClose={handleCloseSnackbar}
-          link={snackbar.link}
-          linkText={snackbar.linkText}
-        />
-      ))}
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#F3F4F6',
+    borderRadius: '8px',
+    padding: '2px 12px',
+    marginBottom: '18px',
+    border: '1px solid #D1D5DB',
+    position: 'relative'
+  }}>
+    <input
+      type="file"
+      id="profile-upload"
+      accept="image/jpeg, image/png"
+      onChange={handleFileSelect}
+      style={{ display: 'none' }}
+    />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9CA3AF"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+
+    <input
+      type="text"
+      value={fileName}
+      readOnly
+      placeholder="No file chosen"
+      style={{
+        flex: 1,
+        padding: '1px 1px 1px 36px',
+        border: 'none',
+        borderRadius: '6px',
+        backgroundColor: 'transparent',
+        color: fileName ? '#3B82F6' : '#9CA3AF',
+        fontFamily: 'Plus Jakarta Sans, sans-serif',
+        fontSize: '13px',
+        fontWeight: 500,
+        lineHeight: '10px',
+        outline: 'none',
+        minWidth: '280px'
+      }}
+    />
+    <label
+      htmlFor="profile-upload"
+      style={{
+        backgroundColor: '#6B7280', // Changed to gray
+        color: '#fff',
+        padding: '6px 12px',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '12px',
+        fontWeight: '500',
+        fontFamily: 'Plus Jakarta Sans, sans-serif',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      Choose File
+    </label>
+  </div>
+<button
+  type="button"
+  onClick={uploadPhoto}
+  disabled={!photoFile}
+  style={{
+    backgroundColor: photoFile ? '#FB923C' : '#E5E7EB',
+    color: photoFile ? '#fff' : '#9CA3AF',
+    padding: '8px 16px',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: photoFile ? 'pointer' : 'not-allowed',
+    fontFamily: 'Plus Jakarta Sans, sans-serif',
+    fontSize: '13px',
+    fontWeight: 500,
+    marginBottom: '8px',
+    float: 'right',
+    textTransform: 'none'  // Added to ensure normal casing
+  }}
+>
+  Upload Photo
+</button>
+
+
+  {error && (
+    <div style={{ marginTop: '8px', color: 'red', fontSize: '13px', fontWeight: '500' }}>
+      {error}
     </div>
+  )}
+
+  {snackbars.map((snackbar, index) => (
+    <Snackbar
+      key={index}
+      index={index}
+      message={snackbar.message}
+      type={snackbar.type}
+      onClose={() => {
+        const newList = [...snackbars];
+        newList.splice(index, 1);
+        setSnackbars(newList);
+      }}
+      link={snackbar.link}
+      linkText={snackbar.linkText}
+    />
+  ))}
+</div>
+
   );
 };
 

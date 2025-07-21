@@ -15,7 +15,8 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const jobId = new URLSearchParams(location.search).get('jobId');
-  const applyJobId = new URLSearchParams(location.search).get('applyJobId'); 
+  const applyJobId1 = new URLSearchParams(location.search).get('applyJobId'); 
+    const [applyJobId, setApplyJobId] = useState(null);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -35,7 +36,7 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
       try {
         const authToken = localStorage.getItem('jwtToken');
         const response = await axios.get(
-          `${apiUrl}/viewjob/applicant/viewjob/${jobId}`,
+          `${apiUrl}/viewjob/applicant/viewjob/${jobId}/${applicantId}`,
           {
             headers: {
               Authorization: `Bearer ${authToken}`,
@@ -46,9 +47,11 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
         const { body } = response.data;
         setLoading(false);
         if (body) {
-          setJobDetails(body);
-          localStorage.setItem(`jobDetails_${jobId}`, JSON.stringify(body));
-        }
+  setJobDetails(body);
+  setApplyJobId(body.applyJobId); // ✅ Store applyJobId correctly here
+  localStorage.setItem(`jobDetails_${jobId}`, JSON.stringify(body));
+  localStorage.setItem(`applyJobId_${jobId}`, JSON.stringify(body.applyJobId)); // optional
+}
       } catch (error) {
         console.error('Error fetching job details:', error);
       } finally {
@@ -85,20 +88,11 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
   };
 
   useEffect(() => {
-    if (jobId) {
+    if (jobId && applyJobId) {
       fetchJobStatus();
     }
-  }, [jobId]);
+  }, [applyJobId,jobId]);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (jobId) {
-        fetchJobStatus();
-      }
-    }, 5000); // Polling interval set to 5 seconds
-
-    return () => clearInterval(intervalId);
-  }, [jobId]);
 
   function formatDate(dateString) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -223,23 +217,129 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
                         </div>
                       </div>
                     )}
-                   <h4>Status History</h4>
-  {jobStatus && jobStatus.length > 0 && (
-    <ul className="events">
-      {jobStatus.slice().map((status, index) => (
-        <li key={index}>
-          {status && status.changeDate && status.status !== undefined && (
-            <>
-              <time>Date: {formatDate(status.changeDate)}</time>
-              <span>
-                <strong>Status: {status.status === 'New' ? 'Job Applied' : status.status}</strong>
-              </span>
-            </>
-          )}
-        </li>
-      ))}
-    </ul>
-  )}
+                   {jobStatus && jobStatus.length > 0 && (() => {
+  // Step 1: Sort by date descending (latest first)
+  const sortedStatuses = jobStatus
+    .slice()
+    .sort((a, b) => new Date(b.changeDate) - new Date(a.changeDate));
+ 
+  // Step 2: Separate final decision from others
+  const normalStatuses = [];
+  let finalDecision = null;
+ 
+  for (const status of sortedStatuses) {
+    if (!finalDecision && (status.status === 'Selected' || status.status === 'Rejected')) {
+      finalDecision = status;
+    } else if (status.status !== 'Selected' && status.status !== 'Rejected') {
+      normalStatuses.push(status);
+    }
+  }
+ 
+  // Step 3: Combine in correct display order (oldest first)
+  const displayStatuses = [...normalStatuses.reverse()];
+  if (finalDecision) displayStatuses.push(finalDecision);
+ 
+  return (
+    <div
+      style={{
+        backgroundColor: 'white',
+        borderRadius: '10px',
+        padding: '20px',
+        width: '100%',
+        maxWidth: '730px',
+        boxShadow: '0 0 10px rgba(0,0,0,0.05)',
+      }}
+    >
+      <h3 className="mb-4">Status History</h3>
+ 
+      <ul className="list-unstyled m-0 position-relative">
+        {/* Vertical connector line */}
+       <div
+  style={{
+    position: 'absolute',
+    left: '141px',
+    top: '0px',
+    height: `${(displayStatuses.length - 1) * 50 }px`, // subtract half dot height
+    width: '2px',
+    backgroundColor: '#f57c00',
+    zIndex: 0,
+  }}
+></div>
+ 
+ 
+        {displayStatuses.map((status, index) => {
+          const isSelected = status.status === 'Selected';
+          const isRejected = status.status === 'Rejected';
+ 
+          // Dot styling based on status
+          const getDotStyle = () => {
+            if (isSelected) {
+              return {
+                backgroundColor: 'green',
+                color: 'white',
+              };
+            } else if (isRejected) {
+              return {
+                backgroundColor: 'red',
+                color: 'white',
+              };
+            } else {
+              return {
+                backgroundColor: '#f57c00',
+                color: 'transparent',
+              };
+            }
+          };
+ 
+          return (
+            <li key={index} className="d-flex align-items-start mb-4 position-relative">
+              {/* Date (no time) */}
+              <div style={{ width: '120px', fontWeight: '500', fontSize: '13px' }}>
+  {new Date(status.changeDate).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })}
+</div>
+ 
+ 
+              {/* Dot with icon */}
+              <div
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  margin: '0 13px',
+                  zIndex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  ...getDotStyle(),
+                }}
+              >
+                {isSelected && '✔'}
+                {isRejected && '✖'}
+              </div>
+ 
+              {/* Status info */}
+              <div style={{ flex: 1, fontSize: '14px' }}>
+                <strong>{status.status === 'New' ? 'Applied Job' : status.status}</strong>
+ 
+                {(isSelected || isRejected) && status.applyJob?.reason && (
+                  <p className="text-muted mb-0 mt-1" style={{ fontSize: '13px' }}>
+                    Reason: {status.applyJob.reason}
+                  </p>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+})()}
                   </article>
                 </div>
               </div>

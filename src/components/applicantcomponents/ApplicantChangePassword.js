@@ -25,37 +25,51 @@ function ApplicantChangePassword() {
     newPassword: '',
     confirmedPassword: '',
   });
-  const validateForm = () => {
-    let isValid = true;
-    const errors = {};
-    if (!oldPassword.trim()) {
-      errors.oldPassword = 'Old password is required.';
-      isValid = false;
-    } else {
-      errors.oldPassword = '';
-    }
+  const [touchedFields, setTouchedFields] = useState({
+  oldPassword: false,
+  newPassword: false,
+  confirmedPassword: false,
+});
+ const [submitAttempted, setSubmitAttempted] = useState(false);
+ const handleBlur = (field) => {
+  const updatedTouched = { ...touchedFields, [field]: true };
+  setTouchedFields(updatedTouched);
+  validateForm(updatedTouched);
+};
+const validateForm = (customTouched = touchedFields) => {
+  let isValid = true;
+  const errors = {};
+ 
+  if ((customTouched.oldPassword || submitAttempted) && !oldPassword.trim()) {
+    errors.oldPassword = 'Old password is required.';
+    isValid = false;
+  }
+ 
+  if (customTouched.newPassword || submitAttempted) {
     if (!newPassword.trim()) {
       errors.newPassword = 'New password is required.';
       isValid = false;
     } else if (!isValidPassword(newPassword)) {
       errors.newPassword =
-        'New password must be at least 6 characters long, contain one uppercase letter, one lowercase letter, one number, one special character, and no spaces.';
+        'New password must be at least 6 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character.';
       isValid = false;
-    } else {
-      errors.newPassword = '';
     }
+  }
+ 
+  if (customTouched.confirmedPassword || submitAttempted) {
     if (!confirmedPassword.trim()) {
       errors.confirmedPassword = 'Confirm password is required.';
       isValid = false;
     } else if (newPassword !== confirmedPassword) {
       errors.confirmedPassword = 'Passwords do not match.';
       isValid = false;
-    } else {
-      errors.confirmedPassword = '';
     }
-    setFormErrors(errors);
-    return isValid;
-  };
+  }
+ 
+  setFormErrors(errors);
+  return isValid;
+};
+ 
   const handleTogglePassword = (type) => {
     switch (type) {
       case 'old':
@@ -75,7 +89,7 @@ function ApplicantChangePassword() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
- 
+    setSubmitAttempted(true);
     if (!validateForm()) {
       return;
     }
@@ -128,21 +142,21 @@ const response = await axios.post(
 );
 
       if (response.data === 'Password updated and stored') {
-      
        setSnackbar({ open: true, message: 'Password changed successfully', type: 'success' });
-      }else if(response.data==='your new password should not be same as old password'){
-
-        setSnackbar({ open: true, message: 'New password should not be same as old password.', type: 'error' });
+       navigate('/applicanthome');
       } else {
-       
         setSnackbar({ open: true, message: 'Password change failed. Old password is wrong.', type: 'error' });
-      
       }
     } 
   catch (error) {
       console.error('Password change failed. Old password is wrong.:', error);
-    
-      setSnackbar({ open: true, message: 'Password change failed. Old password is wrong.', type: 'error' });
+          const errorMessage = error.response.data;
+      if(errorMessage === 'Your old password not matching with data base password'){
+        setSnackbar({ open: true, message: 'old password is incorrect', type: 'error' });
+      }
+      else if(errorMessage === 'your new password should not be same as old password'){
+        setSnackbar({ open: true, message: 'old password and new password should not be same', type: 'error' });
+      }
     }
   };
   const isValidPassword = (password) => {
@@ -188,14 +202,14 @@ const response = await axios.post(
           className="input-form password-input"
           value={oldPassword}
           onChange={(e) => setOldPassword(e.target.value)}
-          onBlur={() => validateForm()}
-          required=""
+          onBlur={() => handleBlur('oldPassword')}
+           required=""
         />
         <div className="password-toggle-icon" onClick={() => handleTogglePassword('old')} id="password-addon">
           {showOldPassword ? <FaEye /> : <FaEyeSlash />}
         </div>
       </div>
-                          {formErrors.oldPassword && (
+                           {(formErrors.oldPassword && (touchedFields.oldPassword || submitAttempted)) &&  (
                             <div className="error-message">{formErrors.oldPassword}</div>
                           )}
                         </div>
@@ -211,14 +225,14 @@ const response = await axios.post(
           className="input-form"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          onBlur={() => validateForm()}
+          onBlur={() => handleBlur('newPassword')}
           required=""
         />
         <div className="password-toggle-icon" onClick={() => handleTogglePassword('new')} id="password-addon">
           {showNewPassword ? <FaEye /> : <FaEyeSlash />}
         </div>
       </div>
-                          {formErrors.newPassword && (
+                          {(formErrors.newPassword && (touchedFields.newPassword || submitAttempted)) && (
                             <div className="error-message">{formErrors.newPassword}</div>
                           )}
                         </div>
@@ -234,14 +248,14 @@ const response = await axios.post(
           className="input-form password-input"
           value={confirmedPassword}
           onChange={(e) => setConfirmedPassword(e.target.value)}
-          onBlur={() => validateForm()}
+          onBlur={() => handleBlur('confirmedPassword')}
           required=""
         />
         <div className="password-toggle-icon" onClick={() => handleTogglePassword('confirmed')} id="password-addon">
           {showConfirmedPassword ? <FaEye /> : <FaEyeSlash />}
         </div>
       </div>
-                          {formErrors.confirmedPassword && (
+{(formErrors.confirmedPassword && (touchedFields.confirmedPassword || submitAttempted)) && (
                             <div className="error-message">{formErrors.confirmedPassword}</div>
                           )}
                         </div>
