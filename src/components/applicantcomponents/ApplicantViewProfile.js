@@ -133,9 +133,9 @@ const ApplicantViewProfile = () => {
         setprofileid(profileId);
         console.log('profileData:', profileData);
         count = 1;
-        const imageResponse = await axios.get(`${apiUrl}/applicant-image/getphoto/${id}`, { responseType: 'arraybuffer',
-          headers: { Authorization: `Bearer ${jwtToken}` }
-         });
+        const imageResponse = await axios.get(`${apiUrl}/applicant-image/getphoto/${id}`, { responseType: 'arraybuffer',headers:{
+          Authorization: `Bearer ${jwtToken}`
+        }, });
         const base64Image = btoa(
           new Uint8Array(imageResponse.data).reduce(
             (data, byte) => data + String.fromCharCode(byte),
@@ -170,7 +170,12 @@ const ApplicantViewProfile = () => {
     const fetchResume = async () => {
       try {
         console.log('Making resume API call...');
-        const resumeResponse = await axios.get(`${apiUrl}/applicant/getResumeId/${id}`);
+        const jwtToken = localStorage.getItem('jwtToken');
+        const resumeResponse = await axios.get(`${apiUrl}/applicant-pdf/getresume/${user.id}`,{
+          headers: {
+            Authorization: `Bearer ${jwtToken}`, // Include JWT token
+          },
+        });
         console.log('Resume API call response:', resumeResponse);
 
         if (resumeResponse.data) {
@@ -208,7 +213,13 @@ const ApplicantViewProfile = () => {
   
   const handleResumeClick1 = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/resume/pdf/${id}`, { responseType: 'blob' });
+      const response = await axios.get(`${apiUrl}/applicant-pdf/getresume/${user.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+          }, responseType: 'blob' 
+        },
+        );
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');

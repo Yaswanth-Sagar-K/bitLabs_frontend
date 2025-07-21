@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'; 
+import React, { useState, useEffect } from 'react'; 
 import { Link } from 'react-router-dom';
 import './VerifiedBadges.css';
 import Taketest from '../../images/user/avatar/Taketest.png';
@@ -34,7 +34,6 @@ import djangoPNG from '../../images/Icons1/Icons/Django.svg';
 import flaskPNG from '../../images/Icons1/Icons/Flask.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Verified from '../../images/user/avatar/Verified.png';
-import Snackbar from '../common/Snackbar';
 
 
 
@@ -43,19 +42,6 @@ const SkillBadgeCard = ({ skillName, status, badgeIcon, retakeTest, testFailedAt
   const [timeLeft, setTimeLeft] = useState({});
   const [isRetakeAvailable, setIsRetakeAvailable] = useState(false);
   const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const [isPhotoFetched, setIsPhotoFetched] = useState(false);
-const [photoTimestampValid, setPhotoTimestampValid] = useState(false);
-const { user } = useUserContext();
- const [snackbars, setSnackbars] = useState([]);
-
-   const addSnackbar = (snackbar) => {
-    setSnackbars((prevSnackbars) => [...prevSnackbars, snackbar]);
-  };
-
-   const handleCloseSnackbar = (index) => {
-    setSnackbars((prevSnackbars) => prevSnackbars.filter((_, i) => i !== index));
-  };
  
     // Map skill names to images
     const skillImages = {
@@ -92,51 +78,6 @@ const { user } = useUserContext();
     // Get the image based on skill name, default to javaPNG if not found
     const skillImage = skillImages[skillName] || javaPNG;
 
-    
-
-     useEffect(() => {
-  const checkLastPhotoTime = async () => {
-    try {
-      const jwtToken = localStorage.getItem('jwtToken');
-      const response = await fetch(`${apiUrl}/file/${user.id}/image`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${jwtToken}` },
-      });
-
-      if (response.ok) {
-        const filenameHeader = response.headers.get('X-Filename');
-        console.log("X-Filename:", filenameHeader);
-
-        if (filenameHeader) {
-          const match = filenameHeader.match(/^(\d+)_(\d{8}T\d{6})\.(jpg|png)$/);
-          if (match) {
-            const timestamp = match[2];
-            const year = +timestamp.slice(0, 4);
-            const month = +timestamp.slice(4, 6) - 1;
-            const day = +timestamp.slice(6, 8);
-            const hour = +timestamp.slice(9, 11);
-            const minute = +timestamp.slice(11, 13);
-            const second = +timestamp.slice(13, 15);
-
-            const photoDate = new Date(year, month, day, hour, minute, second);
-            const sixMonthsAgo = new Date();
-            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-            setPhotoTimestampValid(photoDate > sixMonthsAgo);
-          }
-        }
-
-        setIsPhotoFetched(true);
-      }
-    } catch (err) {
-      console.error('Failed to check previous photo timestamp:', err);
-      setIsPhotoFetched(false);
-    }
-  };
-
-  checkLastPhotoTime();
-}, [user.id]);
-    
   useEffect(() => {
     if (status === 'FAILED') {
        // Convert `testFailedAt` to Date object, which is when the test failed
@@ -152,12 +93,9 @@ const { user } = useUserContext();
     testFailedAt[5] // second
     
   );
-
- 
- 
       
       // Calculate the total 7 days (or 168 hours) from the failure time
-      const futureTime = new Date(failedDate.getTime() + 0 * 60 * 1000 + (0 * 60 * 60 * 1000) + (0 * 60 * 1000));
+      const futureTime = new Date(failedDate.getTime() + 7 * 24 * 60 * 60 * 1000 + (5 * 60 * 60 * 1000) + (30 * 60 * 1000));
 
 
 
@@ -188,21 +126,10 @@ const { user } = useUserContext();
     }
   }, [status]);
 
- const handleTakeTest = (testName) => {
-  if (!isPhotoFetched) {
-     addSnackbar({ message: 'Take confirmation image before starting the exam', type: 'error' });
-    console.log("Image not yet checked/fetched");
-    return;
-  }
+  const handleTakeTest = (testName) => {
 
-  if (photoTimestampValid) {
-    console.log("Photo is recent. Navigating...");
     navigate('/applicant-take-test', { state: { testName } });
-  } else {
-     addSnackbar({ message: 'Image is outdated please take new one', type: 'error' });
-    console.log("Photo too old or not found. Please take a new photo.");
-  }
-};
+  };
 
   return (
     <div className={`skill-badge-card ${status === 'PASSED' ? 'passed' : status === 'FAILED' ? 'failed' : ''}`}>
@@ -264,18 +191,6 @@ const { user } = useUserContext();
           </div>
         )}
       </div>
-      
-       {snackbars.map((snackbar, index) => (
-        <Snackbar
-          key={index}
-          index={index}
-          message={snackbar.message}
-          type={snackbar.type}
-          onClose={handleCloseSnackbar}
-          link={snackbar.link}
-          linkText={snackbar.linkText}
-        />
-      ))}
     </div>
   );
 };
@@ -301,153 +216,7 @@ const VerifiedBadges = () => {
   const [isTimerComplete, setIsTimerComplete] = useState(false); // Track if the timer has completed
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
-   const id = user.id;
   
-    const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [photoData, setPhotoData] = useState(null);
-  const [cameraOn, setCameraOn] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [isAllowedToTakePhoto, setIsAllowedToTakePhoto] = useState(true);
-  const [isPhotoFetched, setIsPhotoFetched] = useState(false);
-const [photoTimestampValid, setPhotoTimestampValid] = useState(false);
- const [snackbars, setSnackbars] = useState([]);
-
-   const addSnackbar = (snackbar) => {
-    setSnackbars((prevSnackbars) => [...prevSnackbars, snackbar]);
-  };
-
-   const handleCloseSnackbar = (index) => {
-    setSnackbars((prevSnackbars) => prevSnackbars.filter((_, i) => i !== index));
-  };
-  
-useEffect(() => {
-  const checkLastPhotoTime = async () => {
-    try {
-      const jwtToken = localStorage.getItem('jwtToken');
-      const response = await fetch(`${apiUrl}/file/${user.id}/image`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${jwtToken}` },
-      });
-
-      if (response.ok) {
-        const filenameHeader = response.headers.get('X-Filename');
-        console.log("X-Filename:", filenameHeader);
-
-        if (filenameHeader) {
-          const match = filenameHeader.match(/^(\d+)_(\d{8}T\d{6})\.(jpg|png)$/);
-          if (match) {
-            const timestamp = match[2];
-            const year = +timestamp.slice(0, 4);
-            const month = +timestamp.slice(4, 6) - 1;
-            const day = +timestamp.slice(6, 8);
-            const hour = +timestamp.slice(9, 11);
-            const minute = +timestamp.slice(11, 13);
-            const second = +timestamp.slice(13, 15);
-
-            const photoDate = new Date(year, month, day, hour, minute, second);
-            const sixMonthsAgo = new Date();
-            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-            setPhotoTimestampValid(photoDate > sixMonthsAgo);
-          }
-        }
-
-        setIsPhotoFetched(true);
-      }
-    } catch (err) {
-      console.error('Failed to check previous photo timestamp:', err);
-      setIsPhotoFetched(false);
-    }
-  };
-
-  checkLastPhotoTime();
-}, [user.id]);
-
-
-   const startCamera = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-    // Wait for a short delay to ensure videoRef is mounted
-    setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      } else {
-        console.error('Video element not ready');
-      }
-    }, 100); // 100ms is usually enough
-    setCameraOn(true);
-  } catch (err) {
-    console.error('Camera access denied:', err);
-  }
-};
-
-
-   const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-    }
-    setCameraOn(false);
-  };
-
-   const handleTakePhoto = () => {
-    startCamera();
-    setPhotoData(null);
-  };
-
-    const handleCapture = () => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-
-    if (canvas && video) {
-      const context = canvas.getContext('2d');
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageDataUrl = canvas.toDataURL('image/png');
-      setPhotoData(imageDataUrl);
-      stopCamera();
-    }
-  };
-
-    const handleRetake = () => {
-    setPhotoData(null);
-    startCamera();
-  };
-
-  
-  const handleFinish = async () => {
-    if (!photoData) return;
-
-    setUploading(true);
-    try {
-      const blob = await (await fetch(photoData)).blob();
-      const formData = new FormData();
-      const timestamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15); 
-      formData.append('photo', blob, `${user.id}_${timestamp}.jpg`);
-      const jwtToken = localStorage.getItem('jwtToken')
-
-      const response = await fetch(`${apiUrl}/file/${user.id}/upload`, {
-  method: 'POST',
-  headers: {
-    Authorization: `Bearer ${jwtToken}`, 
-  },
-  body: formData
-  });
-
-      if (response.ok) {
-        console.log('Photo uploaded successfully!');
-        setPhotoData(null);
-  setCameraOn(false);
-      } else {
-         console.log('Failed to upload photo.');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-       console.log('An error occurred while uploading.');
-    } finally {
-      setUploading(false);
-    }
-  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -478,6 +247,7 @@ useEffect(() => {
     fetchUserData();
   }, []);
 
+
   useEffect(() => {
     const fetchTestData = async () => {
       try {
@@ -493,7 +263,9 @@ useEffect(() => {
       }
     };
 
+    setTimeout(() => {
     fetchTestData();
+    }, 500);
   }, [user.id]);
 
   useEffect(() => {
@@ -518,9 +290,9 @@ useEffect(() => {
       } 
     };
 
+   setTimeout(() => {
     fetchSkillBadges();
-    console.log(skillBadges);
-    
+    }, 500);
   }, [userId]);
   
   useEffect(() => {
@@ -563,6 +335,7 @@ useEffect(() => {
                 days: Math.floor(difference / (1000 * 60 * 60 * 24)),
                 hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
                 minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds: Math.floor((difference % (1000 * 60)) / 1000),
               };
               setTimer(timeLeft);
               setIsTimerComplete(false); // Timer is still counting down
@@ -615,6 +388,7 @@ useEffect(() => {
                   days: Math.floor(difference / (1000 * 60 * 60 * 24)),
                   hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
                   minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+                  seconds: Math.floor((difference % (1000 * 60)) / 1000),
                 };
                 setTimer(timeLeft);
                 setIsTimerComplete(false); // Timer is still counting down
@@ -894,21 +668,10 @@ useEffect(() => {
    
   };
 
- const handleTakeTest = (testName) => {
-  if (!isPhotoFetched) {
-     addSnackbar({ message: 'Take confirmation image before starting the exam', type: 'error' });
-    console.log("Image not yet checked/fetched");
-    return;
-  }
+  const handleTakeTest = (testName) => {
 
-  if (photoTimestampValid) {
-    console.log("Photo is recent. Navigating...");
     navigate('/applicant-take-test', { state: { testName } });
-  } else {
-     addSnackbar({ message: 'Image is outdated please take new one', type: 'error' });
-    console.log("Photo too old or not found. Please take a new photo.");
-  }
-};
+  };
 
   const handleRetakeTest = () => {
 
@@ -922,51 +685,7 @@ useEffect(() => {
               <div className="row">
                 <div className="col-lg-12 col-md-12 ">
                   <div className="title-dashboard">
-                    <div style={{ textAlign: 'center' }}>
-       {!cameraOn && !photoData && isAllowedToTakePhoto && !photoTimestampValid && (
-       <button
-  onClick={handleTakePhoto}
-  style={{
-    position: 'fixed',
-    top: '20%',
-    right: '20px',
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 0,
-    zIndex: 1000,
-  }}
->
- <i class="fas fa-user fa-3x"></i>
-</button>
-
-      )}
-
-      {cameraOn && (
-        <div>
-          <video ref={videoRef} width="400" height="300" autoPlay playsInline />
-          <br />
-          <button onClick={handleCapture}>Capture</button>
-        </div>
-      )}
-
-      <canvas ref={canvasRef} width="400" height="300" style={{ display: 'none' }} />
-
-      {photoData && (
-        <div>
-          <h3>Preview:</h3>
-          <img src={photoData} alt="Captured" style={{ border: '1px solid #ccc', marginTop: '10px' }} />
-          <br />
-          <button onClick={handleRetake} disabled={uploading}>Retake</button>
-          <button onClick={handleFinish} disabled={uploading}>
-            {uploading ? 'Uploading...' : 'Finish'}
-          </button>
-        </div>
-      )}
-    </div>
-
                     <div className="title-dash flex2">Verified Badges</div>
-                    
                     <h3 style={{ marginTop: '50px', marginBottom: '10px' }}>Pre-Screened badge</h3>
                     {!hideSteps &&(
                     <p>
@@ -1077,6 +796,10 @@ useEffect(() => {
     <span style={{ fontWeight: '700', fontSize: 'clamp(15px, 2vw, 20px)' }}>{timer.minutes}</span>
   )}
   {timer.minutes > 0 && 'm'}
+  {timer.seconds > 0 && timer.hours === 0 && timer.days === 0 && (
+    <span style={{ fontWeight: '700', fontSize: 'clamp(15px, 2vw, 20px)' }}>{timer.seconds}</span>
+  )}
+  {timer.seconds > 0 && timer.hours === 0 && timer.days === 0 && 'sec'}
 </div>
         </div>
       )}
@@ -1140,6 +863,11 @@ useEffect(() => {
     }}>{timer.minutes}</span>
   )}
   {timer.minutes > 0 && 'm'}
+  {timer.seconds > 0 && timer.hours === 0 && timer.days === 0 && (
+    <span style={{ fontWeight: '700', fontSize: 'clamp(15px, 2vw, 20px)' }}>{timer.seconds}</span>
+  )}
+  {timer.seconds > 0 && timer.hours === 0 && timer.days === 0 && 'sec'}
+  
 </div>
         </div>
       )}
@@ -1242,20 +970,9 @@ useEffect(() => {
 
 
 
-       {snackbars.map((snackbar, index) => (
-        <Snackbar
-          key={index}
-          index={index}
-          message={snackbar.message}
-          type={snackbar.type}
-          onClose={handleCloseSnackbar}
-          link={snackbar.link}
-          linkText={snackbar.linkText}
-        />
-      ))}
+      
 
     </div>
-    
   );
 };
 

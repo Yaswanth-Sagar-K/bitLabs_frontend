@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '../../services/ApplicantAPIService';
 import { useUserContext } from '../common/UserProvider';
 import './ApplicantFindJobs.css';
-
+ 
 function ApplicantAppliedJobs({ setSelectedJobId }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,57 +22,59 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
       const handleNextPage = () => {
         if (pageNum < totalPages - 1) setPageNum((prev) => prev + 1); // Fixed logic
                   };
-  
-
-  const fetchAppliedJobs = useCallback(async () => {
-    setLoading(true);//new line added
-    try {
-      const jwtToken = localStorage.getItem('jwtToken');
-      const response = await axios.get(
-        `${apiUrl}/applyjob/getAppliedJobs/${applicantId}?page=${pageNum}&size=${pageSize}`,//new api added
-        {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        }
-      );
-      setJobs(response.data);
-    } catch (error) {
-      console.error('Error fetching applied jobs:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [applicantId, pageNum]);// pageNum added for pagination
-
-// for count calculate applied jobs for pagination
-  const fetchTotalAppliedJobs = useCallback(async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/applyjob/countAppliedJobs/${applicantId}`);
-      const totalJobs = response.data || 0;
-      setTotalPages( Math.ceil(totalJobs / pageSize)); // Ensures at least 1 page
-    } catch (error) {
-      console.error('Error fetching total applied jobs count:', error);
-    }
-  }, [applicantId]);
-  
-  useEffect(() => {
-    fetchTotalAppliedJobs();
-    fetchAppliedJobs();
-  }, [fetchAppliedJobs, fetchTotalAppliedJobs]);//for applied total jons addes for pagination
-
-// for console
-  useEffect(() => {
-    console.log("Total Pages:", totalPages, "Page Number:", pageNum);
-  }, [totalPages, pageNum]);
-  
  
-  useEffect(() => {
-    fetchTotalAppliedJobs().then(() => {
-      fetchAppliedJobs();
-    });
-  }, [pageNum]); // Depend only on pageNum for pagination
-  
-
+                  useEffect(() => {
+                    const fetchData = async () => {
+                      setLoading(true);
+                      try {
+                        const jwtToken = localStorage.getItem('jwtToken');
+                       
+                        // Fetch applied jobs count
+                        const countRes = await axios.get(`${apiUrl}/applyjob/countAppliedJobs/${applicantId}`,
+                          {
+                            headers: {
+                              Authorization: `Bearer ${jwtToken}`,
+                            },
+                          }
+                        );
+                        const totalJobs = countRes.data || 0;
+                        setTotalPages(Math.ceil(totalJobs / pageSize));
+                 
+                        // Fetch paginated applied jobs
+                        const jobsRes = await axios.get(
+                          `${apiUrl}/applyjob/getAppliedJobs/${applicantId}?page=${pageNum}&size=${pageSize}`,
+                          {
+                            headers: {
+                              Authorization: `Bearer ${jwtToken}`,
+                            },
+                          }
+                        );
+                        setJobs(jobsRes.data);
+                      } catch (error) {
+                        console.error('Error loading applied jobs:', error);
+                      } finally {
+                        setLoading(false);
+                      }
+                    };
+                 
+                    fetchData();
+                  }, [pageNum]);
+ 
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+  const handleCheckStatusClick = (jobId, applyJobId) => {
+    setSelectedJobId(applyJobId);
+    navigate(`/applicant-interview-status?jobId=${jobId}&applyJobId=${applyJobId}`);
+  };
+ 
+ 
+ 
+  const convertToLakhs = (amountInRupees) => {
+    return (amountInRupees * 1).toFixed(2);
+  };
+ 
   return (
     <div>
       {loading ? null : (
@@ -130,12 +132,19 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
                                         Exp &nbsp;{job.minimumExperience} - {job.maximumExperience} years
                                       </a>
                                     </li>
+                                    <li>
+                                      <a href="javascript:void(0);">&#x20B9; {convertToLakhs(job.minSalary)} - &#x20B9; {convertToLakhs(job.maxSalary)} LPA</a>
+                                    </li>
                                   </ul>
                                 </div>
-                                <div className="job-footer-right">
+                                <div className="job-footer-right" >
+                                <div className="price">
+                                    <span style={{ fontSize: '12px' }}>Posted on {formatDate(job.creationDate)}</span>
+                                  </div>
                                   <button
                                     className="button-status"
-                                    onClick={() => setSelectedJobId(job.applyJobId)}
+                                    onClick={() => handleCheckStatusClick(job.id, job.applyJobId)}
+ 
                                   >
                                     Check Status
                                   </button>
@@ -146,9 +155,9 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
                         )}
                       </div>
                     </div>
-
+ 
                     {/* Pagination */}
-
+ 
                     <div className="pagination" style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px", gap: "10px" }}>
   <button
     onClick={handlePreviousPage}
@@ -158,7 +167,7 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
   >
     <span aria-hidden="true">&lsaquo;</span> {/* Left Arrow */}
   </button>
-
+ 
   {/* Page Numbers */}
   {Array.from({ length: totalPages }, (_, i) => i + 1) // Map backend 0-indexed to frontend 1-indexed
     .filter((pageNumber) => {
@@ -189,7 +198,7 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
         </button>
       )
     )}
-
+ 
   <button
     onClick={handleNextPage}
     className="arrow-button"
@@ -199,7 +208,7 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
     <span aria-hidden="true">&rsaquo;</span> {/* Right Arrow */}
   </button>
 </div>
-
+ 
                   </div>
                 </div>
               </section>
@@ -210,5 +219,5 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
     </div>
   );
 }
-
+ 
 export default ApplicantAppliedJobs;
