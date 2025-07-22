@@ -35,6 +35,7 @@ const ApplicantBasicDetails = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [resumeUploaded, setResumeUploaded] = useState(false);
+  const [isResponseSubmitted, setResponseSubmitted] = useState(false);
   const [applicant, setApplicant] = useState({
     firstName: '',
     lastName: '',
@@ -599,6 +600,7 @@ delete transformedApplicantProfileDTO.skillsRequired;
       const jwtToken = localStorage.getItem('jwtToken');
       const formData = new FormData();
       formData.append('resume', resumeFile);
+      setResponseSubmitted(true);
       const response = await axios.post(
         `${apiUrl}/applicant-pdf/${user.id}/upload`,
 
@@ -620,8 +622,14 @@ delete transformedApplicantProfileDTO.skillsRequired;
       
     } catch (error) {
       console.error('Error uploading resume:', error);
-      
-      addSnackbar({ message: 'Error uploading resume. Please try again.', type: 'error' });
+      setResponseSubmitted(false);
+      setResumeUploaded(false);
+      if (error.code === 'ERR_NETWORK') {
+        addSnackbar({ message: 'Please check your network and try again.', type: 'error' });
+      }
+      else{
+        addSnackbar({ message: 'Error uploading resume. Please try again.', type: 'error' });
+      }
     }
     resetForm();
    
@@ -1161,11 +1169,7 @@ delete transformedApplicantProfileDTO.skillsRequired;
   <button
     type="submit"
     className="form-button"
-    disabled={!resumeUploaded}
-    style={{
-      opacity: resumeUploaded ? 1 : 0.6,
-      cursor: resumeUploaded ? 'pointer' : 'not-allowed',
-    }}
+    disabled={!resumeUploaded || isResponseSubmitted}
   >
     Submit
   </button>
