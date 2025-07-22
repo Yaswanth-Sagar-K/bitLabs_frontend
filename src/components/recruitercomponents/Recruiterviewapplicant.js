@@ -437,12 +437,8 @@ useEffect(() => {
       }
       const token = localStorage.getItem('jwtToken');
       const response = await axios.put(
-        `${apiUrl}/applyjob/recruiters/applicant/${id}/applyjob-update-status/${applyJobId}/${newStatus}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          }
-        }
+        `${apiUrl}/applyjob/recruiters/applyjob-update-status/${applyJobId}`,
+        { newStatus: newStatus, reason: null }
       );
       const message1 = `Status changed to ${newStatus}`;
       setSnackbar({ open: true, message: message1, type: 'success' });
