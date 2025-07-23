@@ -146,7 +146,7 @@ const handlePageClick = (pageNum) => {
 
   const handleApplyNowClickView = (jobId) => {
     setSelectedJobId(jobId);
-    navigate('/applicant-view-job', { state: { from: location.pathname } });
+    navigate(`/applicant-view-job?jobId=${jobId}`, { state: { from: location.pathname } });
   };
 
   const handleCloseSnackbar = (index) => {
