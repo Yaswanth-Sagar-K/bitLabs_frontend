@@ -66,6 +66,7 @@ export default function ApplicantJobAlerts() {
           }
         );
         const alerts = response.data;
+        console.log(alerts)
         setJobAlerts(alerts);
       } catch (error) {
         console.error('Error fetching job alerts:', error);
@@ -73,6 +74,22 @@ export default function ApplicantJobAlerts() {
     };
     fetchJobAlerts();
   }, []);
+
+const handleDeleteAlert = async (alertId) => {
+  try {
+    const authToken = localStorage.getItem('jwtToken');
+    await axios.delete(`${apiUrl}/applyjob/alert/delete/${alertId}`, {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+
+    setJobAlerts(prevAlerts => prevAlerts.filter(alert => alert.alertsId !== alertId));
+  } catch (error) {
+    console.error("Error deleting alert:", error);
+  }
+};
+
 
   useEffect(() => {
     const jwtToken = localStorage.getItem('jwtToken');
@@ -199,7 +216,7 @@ function formatDate(dateArray) {
       
       <>
         <Link
-          to={`/applicant-interview-status?jobId=${alert.applyJob.job.id}&applyJobId=${alert.applyJob.applyjobid}`}
+          to={`/applicant-interview-status?jobId=${alert.jobId}&applyJobId=${alert.applyjobid}`}
           className="link"
           onMouseOver={(e) => { e.target.style.color = 'black'; }}
           onMouseOut={(e) => { e.target.style.color = 'black'; }}
@@ -213,13 +230,21 @@ function formatDate(dateArray) {
             {formatDate(alert.changeDate)}
           </span>
         </Link>
+ 
       </>
-    
-  </h4>
+        </h4>
+ <span
+    style={{ marginLeft: '30px', cursor: 'pointer', color: 'red', fontWeight: 'bold' }}
+    onClick={(e) => {
+      e.stopPropagation(); 
+      e.preventDefault();  
+      handleDeleteAlert(alert.alertsId); 
+    }}
+  >
+    &#x2716;
+  </span>
+
 </div>
-                      {alert.applyJob && (
-                        <a href="#" className="p-16 color-3">{alert.applyJob.jobTitle}</a>
-                      )}
                     </li>
                   ))}
                 </ul>
