@@ -1,65 +1,63 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '../../services/ApplicantAPIService';
 import { useUserContext } from '../common/UserProvider';
 import './ApplicantFindJobs.css';
- 
+import PropTypes from 'prop-types';
+
 function ApplicantAppliedJobs({ setSelectedJobId }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useUserContext();
   const applicantId = user.id;
   const navigate = useNavigate();
-  const pageSize = 10; // for Pagination page Size
-  const [pageNum, setPageNum] = useState(0); // for pagination page numbers
-  const [totalPages, setTotalPages] = useState(1);//for pagination total pages
-// for previous page pagination
+  const pageSize = 10;
+  const [pageNum, setPageNum] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const handlePreviousPage = () => {
-        if (pageNum > 0) setPageNum((prev) => prev - 1);
-      };
-// for next page pagination
-      const handleNextPage = () => {
-        if (pageNum < totalPages - 1) setPageNum((prev) => prev + 1); // Fixed logic
-                  };
- 
-                  useEffect(() => {
-                    const fetchData = async () => {
-                      setLoading(true);
-                      try {
-                        const jwtToken = localStorage.getItem('jwtToken');
-                       
-                        // Fetch applied jobs count
-                        const countRes = await axios.get(`${apiUrl}/applyjob/countAppliedJobs/${applicantId}`,
-                          {
-                            headers: {
-                              Authorization: `Bearer ${jwtToken}`,
-                            },
-                          }
-                        );
-                        const totalJobs = countRes.data || 0;
-                        setTotalPages(Math.ceil(totalJobs / pageSize));
-                 
-                        // Fetch paginated applied jobs
-                        const jobsRes = await axios.get(
-                          `${apiUrl}/applyjob/getAppliedJobs/${applicantId}?page=${pageNum}&size=${pageSize}`,
-                          {
-                            headers: {
-                              Authorization: `Bearer ${jwtToken}`,
-                            },
-                          }
-                        );
-                        setJobs(jobsRes.data);
-                      } catch (error) {
-                        console.error('Error loading applied jobs:', error);
-                      } finally {
-                        setLoading(false);
-                      }
-                    };
-                 
-                    fetchData();
-                  }, [pageNum]);
- 
+    if (pageNum > 0) setPageNum((prev) => prev - 1);
+  };
+
+  const handleNextPage = () => {
+    if (pageNum < totalPages - 1) setPageNum((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const jwtToken = localStorage.getItem('jwtToken');
+        const countRes = await axios.get(`${apiUrl}/applyjob/countAppliedJobs/${applicantId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          }
+        );
+        const totalJobs = countRes.data || 0;
+        setTotalPages(Math.ceil(totalJobs / pageSize));
+
+        const jobsRes = await axios.get(
+          `${apiUrl}/applyjob/getAppliedJobs/${applicantId}?page=${pageNum}&size=${pageSize}`,
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          }
+        );
+        setJobs(jobsRes.data);
+      } catch (error) {
+        console.error('Error loading applied jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [pageNum]);
+
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
@@ -68,13 +66,11 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
     setSelectedJobId(applyJobId);
     navigate(`/applicant-interview-status?jobId=${jobId}&applyJobId=${applyJobId}`);
   };
- 
- 
- 
+
   const convertToLakhs = (amountInRupees) => {
     return (amountInRupees * 1).toFixed(2);
   };
- 
+
   return (
     <div>
       {loading ? null : (
@@ -105,7 +101,7 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
                                 <div className="inner-box">
                                   <div className="box-content">
                                     <h4>
-                                      <a href="javascript:void(0);">{job.companyname}</a>
+                                      <p>{job.companyname}</p>
                                     </h4>
                                     <h3>{job.jobTitle}</h3>
                                     <ul>
@@ -120,31 +116,31 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
                                 <div className="job-footer-left">
                                   <ul className="job-tag">
                                     <li>
-                                      <a href="javascript:void(0);">{job.employeeType}</a>
+                                      <p>{job.employeeType}</p>
                                     </li>
                                     <li>
-                                      <a href="javascript:void(0);">
+                                      <p>
                                         {job.remote ? 'Remote' : 'Office-based'}
-                                      </a>
+                                      </p>
                                     </li>
                                     <li>
-                                      <a href="javascript:void(0);">
+                                      <p>
                                         Exp &nbsp;{job.minimumExperience} - {job.maximumExperience} years
-                                      </a>
+                                      </p>
                                     </li>
                                     <li>
-                                      <a href="javascript:void(0);">&#x20B9; {convertToLakhs(job.minSalary)} - &#x20B9; {convertToLakhs(job.maxSalary)} LPA</a>
+                                      <p>&#x20B9; {convertToLakhs(job.minSalary)} - &#x20B9; {convertToLakhs(job.maxSalary)} LPA</p>
                                     </li>
                                   </ul>
                                 </div>
                                 <div className="job-footer-right" >
-                                <div className="price">
+                                  <div className="price">
                                     <span style={{ fontSize: '12px' }}>Posted on {formatDate(job.creationDate)}</span>
                                   </div>
                                   <button
                                     className="button-status"
                                     onClick={() => handleCheckStatusClick(job.id, job.applyJobId)}
- 
+
                                   >
                                     Check Status
                                   </button>
@@ -155,60 +151,61 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
                         )}
                       </div>
                     </div>
- 
+
                     {/* Pagination */}
- 
+
                     <div className="pagination" style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px", gap: "10px" }}>
-  <button
-    onClick={handlePreviousPage}
-    className="arrow-button"
-    disabled={pageNum === 0}
-    style={pageNum === 0 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
-  >
-    <span aria-hidden="true">&lsaquo;</span> {/* Left Arrow */}
-  </button>
- 
-  {/* Page Numbers */}
-  {Array.from({ length: totalPages }, (_, i) => i + 1) // Map backend 0-indexed to frontend 1-indexed
-    .filter((pageNumber) => {
-      return (
-        pageNumber <= 1 || // Show first page
-        pageNumber === totalPages || // Show last page
-        (pageNumber >= pageNum + 1 && pageNumber <= pageNum + 3) // Show pages near the current page
-      );
-    })
-    .reduce((acc, pageNumber, index, array) => {
-      if (index > 0 && pageNumber !== array[index - 1] + 1) {
-        acc.push("...");
-      }
-      acc.push(pageNumber);
-      return acc;
-    }, [])
-    .map((pageNumber, index) =>
-      pageNumber === "..." ? (
-        <span key={index} style={{ padding: "0 5px" }}>...</span>
-      ) : (
-        <button
-          key={pageNumber}
-          onClick={() => setPageNum(pageNumber - 1)} // Subtract 1 since backend uses 0 indexing
-          className={pageNum === pageNumber - 1 ? "active" : ""}
-          style={{ marginBottom: "5px" }}
-        >
-          {pageNumber} {/* Display page as pageNum + 1 */}
-        </button>
-      )
-    )}
- 
-  <button
-    onClick={handleNextPage}
-    className="arrow-button"
-    disabled={pageNum === totalPages - 1}
-    style={pageNum === totalPages - 1 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
-  >
-    <span aria-hidden="true">&rsaquo;</span> {/* Right Arrow */}
-  </button>
-</div>
- 
+                      <button
+                        onClick={handlePreviousPage}
+                        className="arrow-button"
+                        disabled={pageNum === 0}
+                        style={pageNum === 0 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                      >
+                        <span aria-hidden="true">&lsaquo;</span> {/* Left Arrow */}
+                      </button>
+
+                      {/* Page Numbers */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1) // Map backend 0-indexed to frontend 1-indexed
+                        .filter((pageNumber) => {
+                          return (
+                            pageNumber <= 1 || // Show first page
+                            pageNumber === totalPages || // Show last page
+                            (pageNumber >= pageNum + 1 && pageNumber <= pageNum + 3) // Show pages near the current page
+                          );
+                        })
+                        .reduce((acc, pageNumber, index, array) => {
+                          const prev = array[index - 1];
+                          if (index > 0 && pageNumber !== prev + 1) {
+                            acc.push(`ellipsis-${prev}-${pageNumber}`);
+                          }
+                          acc.push(pageNumber);
+                          return acc;
+                        }, [])
+                        .map((item) =>
+                          typeof item === "string" && item.startsWith("ellipsis") ? (
+                            <span key={item} style={{ padding: "0 5px" }}>...</span>
+                          ) : (
+                            <button
+                              key={`page-${item}`}
+                              onClick={() => setPageNum(item - 1)} // 0-indexed for backend
+                              className={pageNum === item - 1 ? "active" : ""}
+                              style={{ marginBottom: "5px" }}
+                            >
+                              {item}
+                            </button>
+                          )
+                        )}
+
+                      <button
+                        onClick={handleNextPage}
+                        className="arrow-button"
+                        disabled={pageNum === totalPages - 1}
+                        style={pageNum === totalPages - 1 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                      >
+                        <span aria-hidden="true">&rsaquo;</span> {/* Right Arrow */}
+                      </button>
+                    </div>
+
                   </div>
                 </div>
               </section>
@@ -219,5 +216,9 @@ function ApplicantAppliedJobs({ setSelectedJobId }) {
     </div>
   );
 }
- 
+
+ApplicantAppliedJobs.propTypes = {
+  setSelectedJobId: PropTypes.func.isRequired,
+};
+
 export default ApplicantAppliedJobs;
