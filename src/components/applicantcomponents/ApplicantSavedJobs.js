@@ -5,6 +5,7 @@ import { useUserContext } from '../common/UserProvider';
 import { useNavigate, useLocation } from "react-router-dom";
 import Snackbar from '../common/Snackbar';
 import './ApplicantFindJobs.css';
+import PropTypes from 'prop-types';
  
 function ApplicantSavedJobs({ setSelectedJobId }) {
   const [jobs, setJobs] = useState([]);
@@ -14,15 +15,11 @@ function ApplicantSavedJobs({ setSelectedJobId }) {
   const navigate = useNavigate();
   const [snackbars, setSnackbars] = useState([]);
   const location = useLocation();
-    const [size, setSize] = useState(10) // Set the size of jobs per request
-    const [savedJobs, setSavedJobs] = useState([]);
+    const [size] = useState(10) 
     const [savedJobsPage, setSavedJobsPage] = useState(1);
-    const [totalSavedJobs, setTotalSavedJobs] = useState(0);
     const [totalSavedPages, setTotalSavedPages] = useState(0);
-    const [savedHasMore, setSavedHasMore] = useState(true);
    
     const jwtToken = user.data.jwt;
- 
  
   useEffect(() => {
     const fetchData = async () => {
@@ -43,7 +40,6 @@ function ApplicantSavedJobs({ setSelectedJobId }) {
         headers: { Authorization: `Bearer ${jwtToken}` },
       });
       const count = response.data;
-      setTotalSavedJobs(count);
       setTotalSavedPages(Math.ceil(count / size));
     } catch (error) {
       console.error("Error fetching saved job count:", error);
@@ -59,10 +55,7 @@ function ApplicantSavedJobs({ setSelectedJobId }) {
       const newJobs = Array.isArray(response.data) ? response.data : [];
 setJobs(newJobs);
  
- 
-      setSavedJobs(newJobs);
       setSavedJobsPage(pageNum);
-      setSavedHasMore(newJobs.length === size);
     } catch (error) {
       console.error("Error fetching saved jobs:", error);
     } finally {
@@ -96,53 +89,18 @@ setJobs(newJobs);
   }
  
   const convertToLakhs = (amountInRupees) => {
-    return (amountInRupees *1).toFixed(2); // Assuming salary is in rupees
+    return (amountInRupees *1).toFixed(2); 
   };
  
-  // const handleApplyNowClick = (jobId,e) => {
-  //   if (e) e.stopPropagation();
-  //   setSelectedJobId(jobId);
-   
-  //   navigate('/applicant-view-job',{state:{from:location.pathname}});
-  // };
  
-  // const handleRemoveJob = async (jobId, e) => {
-  //   e.stopPropagation();
-  //   try {
-  //     const authToken = localStorage.getItem('jwtToken');
-  //     const response = await axios.delete(
-  //       `${apiUrl}/savedjob/applicants/deletejob/${applicantId}/${jobId}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${authToken}`,
-  //         },
-  //       }
-  //     );
- 
-  //     if (response.status === 200) {
-  //       // Update the jobs state to remove the job immediately
-  //       setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
-  //       setSavedJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
- 
-  //       addSnackbar({ message: 'Job removed', type: 'success' });
-  //     }
-  //   } catch (error) {
-  //     addSnackbar({ message: 'Error removing job. Please try again later.', type: 'error' });
-  //     console.error('Error removing job:', error);
-  //   }
-  // };
- 
-
-
   const handleApplyNowClick = (jobId, e) => {
     if (e) e.stopPropagation();
     setSelectedJobId(jobId);
 
     // Update jobs and savedJobs state immediately after applying
     setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
-    setSavedJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
 
-    navigate('/applicant-view-job', { state: { from: location.pathname } });
+    navigate(`/applicant-view-job?jobId=${jobId}`, { state: { from: location.pathname } });
 };
 
 const handleRemoveJob = async (jobId, e) => {
@@ -161,8 +119,6 @@ const handleRemoveJob = async (jobId, e) => {
         if (response.status === 200) {
             // Remove the job from both lists immediately after it has been successfully removed
             setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
-            setSavedJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
-
             addSnackbar({ message: 'Job removed Successfully', type: 'success' });
         }
     } catch (error) {
@@ -209,7 +165,8 @@ const handleRemoveJob = async (jobId, e) => {
                           <div style={{ marginLeft: 30 }}>No Saved jobs available</div>
                         ) : (
                           jobs.map((job) => (
-                            <div className="features-job cl2 bg-white" key={job.id} onClick={(e) => handleApplyNowClick(job.id, e)}>
+                            <div className="features-job cl2 bg-white" key={job.id}>
+                            <button  onClick={(e) => handleApplyNowClick(job.id, e)} style={{all:'unset'}}>
                               <div className="job-archive-header">
                                 <div className="inner-box">
                                   <div className="box-content">
@@ -234,23 +191,18 @@ const handleRemoveJob = async (jobId, e) => {
                                 <div className="job-footer-left">
                                   <ul className="job-tag">
                                     <li>
-                                      <a href="javascript:void(0);">{job.employeeType}</a>
+                                      <p>{job.employeeType}</p>
                                     </li>
                                     <li>
-                                      <a href="javascript:void(0);">{job.remote ? 'Remote' : 'Office-based'}</a>
+                                      <p>{job.remote ? 'Remote' : 'Office-based'}</p>
                                     </li>
                                     <li>
-                                      <a href="javascript:void(0);">Exp &nbsp;{job.minimumExperience} - {job.maximumExperience} years</a>
+                                      <p>Exp &nbsp;{job.minimumExperience} - {job.maximumExperience} years</p>
                                     </li>
                                     <li>
-                                      <a href="javascript:void(0);">&#x20B9; {convertToLakhs(job.minSalary)} - &#x20B9; {convertToLakhs(job.maxSalary)} LPA</a>
+                                      <p>&#x20B9; {convertToLakhs(job.minSalary)} - &#x20B9; {convertToLakhs(job.maxSalary)} LPA</p>
                                     </li>
                                   </ul>
-                                  <div className="star">
-                                    {Array.from({ length: job.starRating }).map((_, index) => (
-                                      <span key={index} className="icon-star-full"></span>
-                                    ))}
-                                  </div>
                                 </div>
                                 <div className="job-footer-right">
                                   <div className="price">
@@ -280,6 +232,7 @@ const handleRemoveJob = async (jobId, e) => {
                                   </ul>
                                 </div>
                               </div>
+                                </button>
                             </div>
                           ))
                         )}
@@ -338,7 +291,7 @@ const handleRemoveJob = async (jobId, e) => {
   <button
     onClick={handleNextSavedPage}
     className="arrow-button"
-    disabled={savedJobsPage === totalSavedPages - 1} // Disable when on the last page (0-based index)
+    disabled={savedJobsPage === totalSavedPages - 1} 
     style={savedJobsPage === totalSavedPages - 1 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
   >
     &rsaquo;
@@ -359,4 +312,8 @@ const handleRemoveJob = async (jobId, e) => {
   );
 }
  
+ApplicantSavedJobs.propTypes = {
+  setSelectedJobId: PropTypes.func.isRequired,
+};
+
 export default ApplicantSavedJobs;
