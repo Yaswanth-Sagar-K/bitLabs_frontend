@@ -22,6 +22,7 @@ import TermsOfServices from './components/common/TermsOfServices';
 import ApplicantBasicDetails from './components/applicantcomponents/ApplicantBasicDetails';
 import JobWidget from './components/jobWidget';
 import ChatBotWidget from './ChatBotWidget';
+import InterviewAI from './components/applicantcomponents/InterviewAI';
 
 
 
@@ -74,6 +75,7 @@ function App() {
   <Route path="/widget" element={<JobWidget />} />
               {isLoggedIn ? (
                 <>
+                <Route path="/applicant-ai-interview" element={<InterviewAI />} />
                 <Route path="/applicanthome" element={<ApplicantHomePage />} />
                 <Route path="/applicant-update-profile" element={<ApplicantHomePage />} />
                 <Route path="/applicant-view-profile" element={<ApplicantHomePage />} />

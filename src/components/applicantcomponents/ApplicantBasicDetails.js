@@ -42,6 +42,7 @@ const ApplicantBasicDetails = () => {
     email: user.email || "",
     mobilenumber: user.mobilenumber || "",
   });
+  console.log(user);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const basicDetails = {
@@ -847,7 +848,7 @@ delete transformedApplicantProfileDTO.skillsRequired;
                     {results.map((option, index) => (
                       <li
                         key={index}
-                        onClick={() => {
+                        onPointerDown={() => {
                           setExperience(option.label);
                           setIsExperienceMenuOpen(false);
                           // Optional blur
@@ -944,7 +945,7 @@ delete transformedApplicantProfileDTO.skillsRequired;
                       results.map((option, index) => (
                         <li
                           key={index}
-                          onClick={() => {
+                          onPointerDown={() => {
                             const updated = [...preferredJobLocations, option];
                             handlePreferredJobLocationsChange(updated);
                             setIsLocationMenuOpen(false);

@@ -134,9 +134,9 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
 
   const handleAI = (status) => {
     if(status === 'view-report'){
-        setClicked('report');
+        navigate('/applicant-ai-report')
     }else{
-      setClicked('interview');
+      navigate(`/applicant-ai-interview?jobId=${jobId}`)
     }
 
   }
@@ -166,7 +166,7 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
                   <article className="job-article">
                     {jobDetails && (
                       <div className="top-content">
-                        <div className="features-job style-2 stc-apply bg-white" onClick={handleViewJobDetails}>
+                        <div className="features-job style-2 stc-apply bg-white">
                           <div className="job-archive-header">
                             <div className="inner-box">
                               <div className="box-content">
@@ -235,7 +235,7 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
           </button>
                                 <li>
                                   {jobDetails && (                                    
-                                    <button className="button-status">
+                                    <button className="button-status" onClick={handleViewJobDetails}>
                                       View Job Details
                                     </button>
                                   )}
@@ -250,7 +250,9 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
   // Step 1: Sort by date descending (latest first)
   const sortedStatuses = jobStatus
     .slice()
-    .sort((a, b) => new Date(b.changeDate) - new Date(a.changeDate));
+    .sort((a, b) => b.id - a.id);
+    console.log(sortedStatuses);
+    console.log(jobStatus);
  
   // Step 2: Separate final decision from others
   const normalStatuses = [];
@@ -266,6 +268,7 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
  
   // Step 3: Combine in correct display order (oldest first)
   const displayStatuses = [...normalStatuses.reverse()];
+  console.log(displayStatuses);
   if (finalDecision) displayStatuses.push(finalDecision);
  
   return (
