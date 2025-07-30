@@ -362,7 +362,14 @@ const ApplicantViewJob = ({ selectedJobId }) => {
                                   <span style={{ fontSize: '12px' }}>Posted on {formatDate(jobDetails.creationDate)}</span>
                                 </span>
                               </div>
-                              <div className="button-readmore">
+                              <div className="button-readmore" style={{display:'flex', flexDirection:'row'}}>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                               
+     
+      </div>
+
+
+
                               <div style={{ display: 'flex', alignItems: 'center' }}>
         {jobDetails.jobURL.includes('https://www.bitlabs.in/jobs') ? (
           // Internal job: Show Apply button

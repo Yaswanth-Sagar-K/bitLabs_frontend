@@ -130,7 +130,7 @@
     margin-top: 10px !important;
 }
 
-.header {
+.test-page .header {
     display: flex !important;
     justify-content: space-between !important;
     align-items: left !important;

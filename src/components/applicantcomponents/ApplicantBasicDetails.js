@@ -629,8 +629,7 @@ delete transformedApplicantProfileDTO.skillsRequired;
       }
       else{
         addSnackbar({ message: 'Error uploading resume. Please try again.', type: 'error' });
-      }
-    }
+      }    }
     resetForm();
    
    

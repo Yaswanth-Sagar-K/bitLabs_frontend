@@ -3269,6 +3269,7 @@ white-space: nowrap;
 }
 
 .password-toggle-icon {
+  all: unset;
   position: absolute;
   right: 10px; 
   top: 50%;

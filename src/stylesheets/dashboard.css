@@ -5579,8 +5579,8 @@ width: 24px;
     color: #5F5F5F;
     font-size: 22px;
   }
-  .notify-bell .notify-count{
-    font-size: 11px;
+.notify-count{
+    font-size: 12px;
     background-color: #F98F11;
 }
 

@@ -17,6 +17,7 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
   const jobId = new URLSearchParams(location.search).get('jobId');
   const applyJobId1 = new URLSearchParams(location.search).get('applyJobId'); 
     const [applyJobId, setApplyJobId] = useState(null);
+    const [clicked, setClicked] = useState('');
   
   useEffect(() => {
     const fetchData = async () => {
@@ -131,6 +132,15 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
     navigate(`/applicant-view-job`, { state: { from: location.pathname } });
   };
 
+  const handleAI = (status) => {
+    if(status === 'view-report'){
+        setClicked('report');
+    }else{
+      setClicked('interview');
+    }
+
+  }
+
   return (
     <div>
       {loading ? null : (
@@ -204,8 +214,27 @@ const ApplicantInterviewStatus = ({ selectedJobId, setSelectedJobId }) => {
                                 </span>
                               </div>
                               <ul className="job-tag">
+                                    <button
+            className={'btn-apply applied'}
+           onClick={() => handleAI(
+    jobDetails.jobStatus === '!Already Applied' ? 'view-report' : 'take-interview'
+  )}
+            style={{
+              backgroundColor: '#FEF1E8',
+              cursor: 'pointer',
+              height: '38px',
+              color: '#F97316',
+              borderRadius: '8px',
+              backgroundColor: '#FFFFFF',
+              opacity: '80%',
+              borderColor: '#F97316',
+              marginRight:'4px'
+            }}
+          >
+            {jobDetails.jobStatus === '!Already Applied' ? 'View report' : 'Take AI interview'}
+          </button>
                                 <li>
-                                  {jobDetails && (
+                                  {jobDetails && (                                    
                                     <button className="button-status">
                                       View Job Details
                                     </button>
